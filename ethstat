@@ -1,0 +1,12 @@
+#!/bin/bash
+
+[[ -z $1 ]] && echo "Provide a network interface" && exit 1
+[[ ! -h /sys/class/net/$1 ]] && echo "Invalid network device" && exit 1
+
+stats=($(cat /proc/net/dev | grep $1 | cut -d: -f2 | awk '{print $1 " " $9}'))
+# [0] = received
+# [1] = sent
+
+echo Stats for: $1
+echo Received: `echo "${stats[0]} / 1024 / 1024" | bc`mb
+echo Sent: `echo "${stats[1]} / 1024 / 1024" | bc`mb 
