@@ -14,13 +14,13 @@ multifound() {
 }
 
 listfiles() {
-	sed -n -e '/%FILES%/,/^$/p' $PACDB/$1*/files | less
+	sed -n -e '/%FILES%/,/^$/p' $PACDB/$1-*/files | less
 	exit 0
 }
 
 pkgs=($(pacman -Qs $1 | sed -n 1~2p | cut -d\/ -f2 | cut -d\  -f1))
 
-[[ $pkgs = $1 ]] && listfiles $1 && exit 0
+[[ $pkgs = $1 ]] && listfiles $1
 
 case ${#pkgs[*]} in
 	0) echo "No package '$1' found" ;;
