@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-# Credit to user 'melik' on archlinux.org forums
 
-import commands
+from subprocess import Popen, PIPE
 
 # Define colors
 clear = "\x1b[0m"
@@ -35,66 +34,90 @@ list = []
 blank = [ '', '', '', '', '', '', '', '', '' ] 
 
 # Find running processes
-processes = commands.getoutput("ps -A | awk {'print $4'}").split("\n")
+p1 = Popen(['ps', '-A'], stdout=PIPE)
+p2 = Popen(["awk", '{print $4}'], stdin=p1.stdout, stdout=PIPE)
+processes = p2.communicate()[0].split("\n")
+p1 = p2 = None
 
 # Print coloured key with normal value.
 def output(key, value):
-    output = "%s%s:%s %s" % (color, key, clear, value)
-    list.append(output)
+	output = "%s%s:%s %s" % (color, key, clear, value)
+	list.append(output)
 
-def distro_display(): 
-    distro = "Arch Linux"    
-    output('Distro', distro)
+def os_display(): 
+	os = "Arch Linux"	
+	output('OS', os)
 
 def kernel_display():
-    kernel = commands.getoutput("uname -r")
-    output ('Kernel', kernel)
+	kernel = Popen(["uname", "-r"], stdout=PIPE).communicate()[0].rstrip("\n")
+	output ('Kernel', kernel)
 
 def uptime_display():
-    uptime = commands.getoutput('uptime | sed -e \'s/^.*up //\' -e \'s/, *[0-9]*.users.*//\'')
-    output ('Uptime', uptime)
+	p1 = Popen(["uptime"], stdout=PIPE)
+	p2 = Popen(['sed', '-e', 's/^.*up //', "-e", 's/, *[0-9]*.users.*//'], stdin=p1.stdout, stdout=PIPE)
+	uptime = p2.communicate()[0].rstrip("\n")
+	output ('Uptime', uptime)
+	p1 = p2 = None
 
 def battery_display(): 
-    battery = commands.getoutput('acpi | sed \'s/.*, //\'')
-    output ('Battery', battery)
+	p1 = Popen(["acpi"], stdout=PIPE)
+	p2 = Popen(["sed", 's/.*, //'], stdin=p1.stdout, stdout=PIPE)
+	battery = p2.communicate()[0].rstrip("\n")
+	output ('Battery', battery)
+	p1 = p2 = None
 
 def de_display():
-    dict = {'gnome-session': 'GNOME',
-        'ksmserver': 'KDE',
-        'xfce-mcs-manager': 'Xfce'}
-    de = 'None found'
-    for key in dict.keys():
-        if key in processes: de = dict[key]
-    output ('DE', de)
+	dict = {'gnome-session': 'GNOME',
+		'ksmserver': 'KDE',
+		'xfce-mcs-manager': 'Xfce'}
+	de = 'None found'
+	for key in dict.keys():
+		if key in processes: de = dict[key]
+	output ('DE', de)
 
 def wm_display():
         dict = {'awesome': 'Awesome',
-        'beryl': 'Beryl',
-        'blackbox': 'Blackbox',
-        'dwm': 'DWM',
-        'enlightenment': 'Enlightenment',
-                'fluxbox': 'Fluxbox',
-        'fvwm': 'FVWM',
-        'icewm': 'icewm',
-        'kwin': 'kwin',
-        'metacity': 'Metacity',
-                'openbox': 'Openbox',
-        'wmaker': 'Window Maker',
-        'xfwm4': 'Xfwm',
-        'xmonad': 'Xmonad'}  
+		'beryl': 'Beryl',
+		'blackbox': 'Blackbox',
+		'dwm': 'DWM',
+		'enlightenment': 'Enlightenment',
+		'fluxbox': 'Fluxbox',
+		'fvwm': 'FVWM',
+		'icewm': 'icewm',
+		'kwin': 'kwin',
+		'metacity': 'Metacity',
+		'openbox': 'Openbox',
+		'wmaker': 'Window Maker',
+		'xfwm4': 'Xfwm',
+		'xmonad': 'Xmonad'}  
         wm = 'None found'
         for key in dict.keys():
-            if key in processes: wm = dict[key]
+		if key in processes: wm = dict[key]
         output ('WM', wm)
 
-# Values to display.    
-# Possible options: kernel, uptime, battery, distro, de, wm, wmtheme, theme, font, icons.
-display = [ 'distro', 'kernel', 'uptime', 'de', 'wm' ]
+def packages_display():
+	p1 = Popen(["pacman", "-Q"], stdout=PIPE)
+	p2 = Popen(["wc", "-l"], stdin=p1.stdout, stdout=PIPE)
+	packages = p2.communicate()[0].rstrip("\n")
+	output ('Packages', packages)
+
+def fs_display():
+	p1 = Popen(["df", "-Th"], stdout=PIPE)
+	p2 = Popen(["grep", "/$"], stdin=p1.stdout, stdout=PIPE)
+	p3 = Popen(["awk", '{print $4}'], stdin=p2.stdout, stdout=PIPE)
+	root = p3.communicate()[0].rstrip("\n")
+	output ('Root', root)
+	p1 = p2 = p3 = None
+
+
+# Values to display.	
+# Possible options: os, kernel, uptime, battery, de, wm, packages, fs.
+display = [ 'os', 'kernel', 'uptime', 'de', 'wm', 'packages', 'fs' ]
 
 for x in display:
-    funcname=x+"_display"
-    func=locals()[funcname]
-    func()
+	funcname=x+"_display"
+	func=locals()[funcname]
+	func()
 
 list.extend(blank)
 
@@ -112,10 +135,10 @@ print """%s
 %s        ###%s############%s+        %s
 %s       #%s######   #######        %s
 %s     .######;     ;###;`\".      %s
-%s    .#######;     ;#####.       
-%s    #########.   .########`     
-%s   ######'           '######    
+%s    .#######;     ;#####.       %s
+%s    #########.   .########`     %s
+%s   ######'           '######    %s
 %s  ;####                 ####;   
 %s  ##'                     '##   
 %s #'                         `#  %s                          
-""" % (color, color, color, color, list[0], color, list[1], color, list[2], color, list[3], color, list[4], color, list[5], color, color2, color, list[6], color, color2, color, list[7], color, color2, list[8], color2, list[9], color2, color2, color2, color2, color2, color2, clear)
+""" % (color, color, color, color, list[0], color, list[1], color, list[2], color, list[3], color, list[4], color, list[5], color, color2, color, list[6], color, color2, color, list[7], color, color2, list[8], color2, list[9], color2, list[10], color2, list[10], color2, list[10], color2, color2, color2, clear)
