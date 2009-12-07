@@ -35,7 +35,7 @@ blank = [ '', '', '', '', '', '', '', '', '' ]
 
 # Find running processes
 p1 = Popen(['ps', '-A'], stdout=PIPE)
-p2 = Popen(["awk", '{print $4}'], stdin=p1.stdout, stdout=PIPE)
+p2 = Popen(['awk', '{print $4}'], stdin=p1.stdout, stdout=PIPE)
 processes = p2.communicate()[0].split("\n")
 p1 = p2 = None
 
@@ -49,19 +49,19 @@ def os_display():
 	output('OS', os)
 
 def kernel_display():
-	kernel = Popen(["uname", "-r"], stdout=PIPE).communicate()[0].rstrip("\n")
+	kernel = Popen(['uname', '-r'], stdout=PIPE).communicate()[0].rstrip("\n")
 	output ('Kernel', kernel)
 
 def uptime_display():
-	p1 = Popen(["uptime"], stdout=PIPE)
-	p2 = Popen(['sed', '-e', 's/^.*up //', "-e", 's/, *[0-9]*.users.*//'], stdin=p1.stdout, stdout=PIPE)
+	p1 = Popen(['uptime'], stdout=PIPE)
+	p2 = Popen(['sed', '-e', 's/^.*up //', '-e', 's/, *[0-9]*.users.*//'], stdin=p1.stdout, stdout=PIPE)
 	uptime = p2.communicate()[0].rstrip("\n")
 	output ('Uptime', uptime)
 	p1 = p2 = None
 
 def battery_display(): 
-	p1 = Popen(["acpi"], stdout=PIPE)
-	p2 = Popen(["sed", 's/.*, //'], stdin=p1.stdout, stdout=PIPE)
+	p1 = Popen(['acpi'], stdout=PIPE)
+	p2 = Popen(['sed', 's/.*, //'], stdin=p1.stdout, stdout=PIPE)
 	battery = p2.communicate()[0].rstrip("\n")
 	output ('Battery', battery)
 	p1 = p2 = None
@@ -76,35 +76,35 @@ def de_display():
 	output ('DE', de)
 
 def wm_display():
-        dict = {'awesome': 'Awesome',
-		'beryl': 'Beryl',
-		'blackbox': 'Blackbox',
-		'dwm': 'DWM',
-		'enlightenment': 'Enlightenment',
-		'fluxbox': 'Fluxbox',
-		'fvwm': 'FVWM',
-		'icewm': 'icewm',
-		'kwin': 'kwin',
-		'metacity': 'Metacity',
-		'openbox': 'Openbox',
-		'wmaker': 'Window Maker',
-		'xfwm4': 'Xfwm',
-		'xmonad': 'Xmonad'}  
-        wm = 'None found'
-        for key in dict.keys():
+	dict = {'awesome': 'Awesome',
+	'beryl': 'Beryl',
+	'blackbox': 'Blackbox',
+	'dwm': 'DWM',
+	'enlightenment': 'Enlightenment',
+	'fluxbox': 'Fluxbox',
+	'fvwm': 'FVWM',
+	'icewm': 'icewm',
+	'kwin': 'kwin',
+	'metacity': 'Metacity',
+	'openbox': 'Openbox',
+	'wmaker': 'Window Maker',
+	'xfwm4': 'Xfwm',
+	'xmonad': 'Xmonad'}  
+	wm = 'None found'
+	for key in dict.keys():
 		if key in processes: wm = dict[key]
-        output ('WM', wm)
+	output ('WM', wm)
 
 def packages_display():
-	p1 = Popen(["pacman", "-Q"], stdout=PIPE)
-	p2 = Popen(["wc", "-l"], stdin=p1.stdout, stdout=PIPE)
+	p1 = Popen(['pacman', '-Q'], stdout=PIPE)
+	p2 = Popen(['wc', '-l'], stdin=p1.stdout, stdout=PIPE)
 	packages = p2.communicate()[0].rstrip("\n")
 	output ('Packages', packages)
 
 def fs_display():
-	p1 = Popen(["df", "-Th"], stdout=PIPE)
-	p2 = Popen(["grep", "/$"], stdin=p1.stdout, stdout=PIPE)
-	p3 = Popen(["awk", '{print $4}'], stdin=p2.stdout, stdout=PIPE)
+	p1 = Popen(['df', '-Th'], stdout=PIPE)
+	p2 = Popen(['grep', '/$'], stdin=p1.stdout, stdout=PIPE)
+	p3 = Popen(['awk', '{print $4}'], stdin=p2.stdout, stdout=PIPE)
 	root = p3.communicate()[0].rstrip("\n")
 	output ('Root', root)
 	p1 = p2 = p3 = None
