@@ -52,22 +52,18 @@ def kernel_display():
 	output ('Kernel', kernel)
 
 def uptime_display():
-	p1 = Popen(['uptime'], stdout=PIPE).communicate()[0].lstrip().split(' ')
-	uptime = " ".join(p1[2:(p1.index(''))]).rstrip(',')
-	output ('Uptime', uptime)
-
-def battery_display():
-#	p1 = Popen(['acpi'], stdout=PIPE)
-#	p2 = Popen(['sed', 's/.*, //'], stdin=p1.stdout, stdout=PIPE)
-#	battery = p2.communicate()[0].rstrip("\n")
-#	output ('Battery', battery)
 	fuptime = open('/proc/uptime').read().split(' ')[0].split('.')[0]
 	day = int(fuptime)/86400
 	hour = (int(fuptime) / 3600) - (24 * (int(fuptime) / 86400))
 	minute = (int(fuptime) / 60) - (60 * (int(fuptime) / 3600))
-	minute2 = '%s'.zfill(3) % (minute)
-	uptime = '%s days, %s:%s' % (day, hour, minute2)
+	uptime = '%d days, %d:%2d' % (day, hour, minute)
 	output ('Uptime', uptime)
+ 
+def battery_display():
+	p1 = Popen(['acpi'], stdout=PIPE)
+	p2 = Popen(['sed', 's/.*, //'], stdin=p1.stdout, stdout=PIPE)
+	battery = p2.communicate()[0].rstrip("\n")
+	output ('Battery', battery)
 
 def de_display():
 	dict = {'gnome-session': 'GNOME', 'ksmserver': 'KDE',
