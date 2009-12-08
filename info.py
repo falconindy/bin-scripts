@@ -49,7 +49,7 @@ def os_display():
 
 def kernel_display():
 	kernel = Popen(['uname', '-r'], stdout=PIPE).communicate()[0].rstrip("\n")
-	output ('Kernel', kernel)
+	output('Kernel', kernel)
 
 def uptime_display():
 	fuptime = open('/proc/uptime').read().split(' ')[0].split('.')[0]
@@ -57,13 +57,13 @@ def uptime_display():
 	hour = (int(fuptime) / 3600) - (24 * (int(fuptime) / 86400))
 	minute = (int(fuptime) / 60) - (60 * (int(fuptime) / 3600))
 	uptime = '%d days, %d:%2d' % (day, hour, minute)
-	output ('Uptime', uptime)
+	output('Uptime', uptime)
  
 def battery_display():
 	p1 = Popen(['acpi'], stdout=PIPE)
 	p2 = Popen(['sed', 's/.*, //'], stdin=p1.stdout, stdout=PIPE)
 	battery = p2.communicate()[0].rstrip("\n")
-	output ('Battery', battery)
+	output('Battery', battery)
 
 def de_display():
 	dict = {'gnome-session': 'GNOME', 'ksmserver': 'KDE',
@@ -71,7 +71,7 @@ def de_display():
 	de = 'None found'
 	for key in dict.keys():
 		if key in processes: de = dict[key]
-	output ('DE', de)
+	output('DE', de)
 
 def wm_display():
 	dict = {'awesome': 'Awesome',
@@ -91,11 +91,11 @@ def wm_display():
 	wm = 'None found'
 	for key in dict.keys():
 		if key in processes: wm = dict[key]
-	output ('WM', wm)
+	output('WM', wm)
 
 def packages_display():
 	packages = len(Popen(['pacman', '-Q'], stdout=PIPE).communicate()[0].split('\n')) - 1
-	output ('Packages', packages)
+	output('Packages', packages)
 
 def fs_display(mount='/'):
 	p1 = Popen(['df', '-h', mount], stdout=PIPE).communicate()[0]
@@ -104,17 +104,17 @@ def fs_display(mount='/'):
 		fs = 'Root'
 	else:
 		fs = mount.rpartition('/')[2].title()
-	output (fs, part)
+	output(fs, part)
 
 def blank_display():
 	list.append('')
 
 # Values to display:
 # Possible options: os, kernel, uptime, battery, de, wm, packages, fs, blank
-display = ['os', 'kernel', 'uptime', 'wm', 'packages', 'blank', 'fs:/', 'fs:/usr', 'fs:/home', 'fs:/mnt/Destruction', 'fs:/mnt/Entropy', 'fs:/mnt/Gluttony']
+display = ['os', 'kernel', 'uptime', 'wm', 'packages', 'blank', 'fs=/', 'fs=/usr', 'fs=/home', 'fs=/mnt/Destruction', 'fs=/mnt/Entropy', 'fs=/mnt/Gluttony']
 
 for x in display:
-	call = [arg for arg in x.split(':') if arg]
+	call = [arg for arg in x.split('=') if arg]
 	funcname=call[0] + "_display"
 	func=locals()[funcname]
 	if len(call) > 1:
