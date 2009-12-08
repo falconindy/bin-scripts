@@ -31,7 +31,7 @@ color2 = "\x1b[0;34m" # blue
 
 # Define arrays containing values.
 list = []
-blank = [ '', '', '', '', '', '', '', '', '' ]
+blank = ['']*10
 
 # Find running processes
 p1 = Popen(['ps', '-A'], stdout=PIPE).communicate()[0].split('\n')
@@ -97,8 +97,7 @@ def packages_display():
 
 def fs_display(mount=''):
 	p1 = Popen(['df', '-Th', mount], stdout=PIPE).communicate()[0]
-	part = [line for line in p1.split('\n') if line][1]
-	part = part.split()[3]
+	part = [line for line in p1.split('\n') if line][1].split()[3]
 	if mount == '/': mount = '/root'
 	output (mount, part)
 
