@@ -65,7 +65,7 @@ def uptime_display():
     output('Uptime', uptime)
  
 def battery_display():
-    p1 = Popen(['acpi'], stdout=PIPE).communicate()[0].split(,)
+    p1 = Popen(['acpi'], stdout=PIPE).communicate()[0].split(',')
     battery = p1[1]
     output('Battery', battery)
 
