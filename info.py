@@ -65,13 +65,13 @@ def uptime_display():
     output('Uptime', uptime)
  
 def battery_display():
-    p1 = Popen(['acpi'], stdout=PIPE)
-    p2 = Popen(['sed', 's/.*, //'], stdin=p1.stdout, stdout=PIPE)
-    battery = p2.communicate()[0].rstrip("\n")
+    p1 = Popen(['acpi'], stdout=PIPE).communicate()[0].split(,)
+    battery = p1[1]
     output('Battery', battery)
 
 def de_display():
-    dict = {'gnome-session': 'GNOME', 'ksmserver': 'KDE',
+    dict = {'gnome-session': 'GNOME',
+        'ksmserver': 'KDE',
         'xfce-mcs-manager': 'Xfce'}
     de = 'None found'
     for key in dict.keys():
