@@ -105,11 +105,10 @@ def fs_display(mount=''):
 # Values to display.	
 # Possible options: os, kernel, uptime, battery, de, wm, packages, fs.
 #display = [ 'os', 'kernel', 'uptime', 'wm', 'packages', 'fs:usr' ]
-display = ['os', 'fs:/usr', 'fs:/home', 'fs:/']
+display = ['os', 'kernel', 'uptime', 'wm', 'packages', 'fs:/', 'fs:/home']
 
 for x in display:
 	call = [arg for arg in x.split(':') if arg]
-	print call
 	funcname=call[0] + "_display"
 	func=locals()[funcname]
 	if len(call) > 1:
