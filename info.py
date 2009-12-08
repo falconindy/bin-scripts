@@ -8,7 +8,7 @@ clear = "\x1b[0m"
 # color = "\x1b[1;30m" # black
 # color2 = "\x1b[0;30m" # black
 
-# color = "\x1b[1;31m" # redg
+# color = "\x1b[1;31m" # red
 # color2 = "\x1b[0;30m" # red
 
 # color = "\x1b[1;32m" # green
@@ -44,7 +44,8 @@ def output(key, value):
 	list.append(output)
 
 def os_display():
-	os = "Arch Linux"
+	arch = Popen(['uname', '-m'], stdout=PIPE).communicate()[0].rstrip('\n')
+	os = "Arch Linux %s" % arch
 	output('OS', os)
 
 def kernel_display():
