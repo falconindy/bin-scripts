@@ -108,7 +108,7 @@ def blank_display():
 
 # Values to display:
 # Possible options: os, kernel, uptime, battery, de, wm, packages, fs, blank
-display = ['os', 'kernel', 'uptime', 'wm', 'packages', 'blank', 'fs:/', 'fs:/home', 'fs:/mnt/Gluttony']
+display = ['os', 'kernel', 'uptime', 'wm', 'packages', 'blank', 'fs:/', 'fs:/usr', 'fs:/home', 'fs:/mnt/Destruction', 'fs:/mnt/Entropy', 'fs:/mnt/Gluttony']
 
 for x in display:
 	call = [arg for arg in x.split(':') if arg]
@@ -141,5 +141,5 @@ print """%s
 %s  ;####                 ####;
 %s  ##'                     '##
 %s #'                         `#  %s
-""" % (color, color, color, color, list[0], color, list[1], color, list[2], color, list[3], color, list[4], color, list[5], color, color2, color, list[6], color, color2, color, list[7], color, color2, list[8], color2, list[9], color2, list[10], color2, list[10], color2, list[10], color2, color2, color2, clear)
+""" % (color, color, color, color, list[0], color, list[1], color, list[2], color, list[3], color, list[4], color, list[5], color, color2, color, list[6], color, color2, color, list[7], color, color2, list[8], color2, list[9], color2, list[10], color2, list[11], color2, list[12], color2, color2, color2, clear)
 
