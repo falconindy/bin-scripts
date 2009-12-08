@@ -95,24 +95,23 @@ def packages_display():
 	packages = len(Popen(['pacman', '-Q'], stdout=PIPE).communicate()[0].split('\n')) - 1
 	output ('Packages', packages)
 
-def fs_display():
-	p1 = Popen(['df', '-Th'], stdout=PIPE).communicate()[0]
-	drives = [line for line in p1.split('\n') if line]
-	for line in drives:
-		if line.endswith('/'):
-			root = line.split()[3]
-			break
-	
-	output ('Root', root)
+def fs_display(mount=''):
+	p1 = Popen(['df', '-Th', '/' + mount], stdout=PIPE).communicate()[0]
+	part = [line for line in p1.split('\n') if line][1]
+	part = part.split()[3]
+	output (mount, part)
 
 # Values to display.	
 # Possible options: os, kernel, uptime, battery, de, wm, packages, fs.
-display = [ 'os', 'kernel', 'uptime', 'de', 'wm', 'packages', 'fs' ]
+#display = [ 'os', 'kernel', 'uptime', 'wm', 'packages', 'fs:usr' ]
+display = ['fs:usr', 'fs:home', 'fs:/']
 
 for x in display:
-	funcname=x+"_display"
+	call = [arg for arg in x.split(':') if arg]
+	print call
+	funcname="fs_display"
 	func=locals()[funcname]
-	func()
+	func(call[1])
 
 list.extend(blank)
 
