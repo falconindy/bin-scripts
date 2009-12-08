@@ -31,7 +31,6 @@ color2 = "\x1b[0;34m" # blue
 
 # Define arrays containing values.
 list = []
-blank = ['']*10
 
 # Find running processes
 p1 = Popen(['ps', '-A'], stdout=PIPE).communicate()[0].split('\n')
@@ -114,7 +113,7 @@ for x in display:
 	else:
 		func()
 
-list.extend(blank)
+list.extend([' ']*(13 - len(display)))
 
 # Result
 print """%s
