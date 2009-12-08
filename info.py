@@ -53,8 +53,8 @@ def kernel_display():
 	output ('Kernel', kernel)
 
 def uptime_display():
-	p1 = Popen(['uptime'], stdout=PIPE).communicate()[0].lstrip()
-	uptime = " ".join(p1.split(' ')[2:5]).rstrip(',')
+	p1 = Popen(['uptime'], stdout=PIPE).communicate()[0].lstrip().split(' ')
+	uptime = " ".join(p1[2:(p1.index(''))]).rstrip(',')
 	output ('Uptime', uptime)
 	p1 = None
 
