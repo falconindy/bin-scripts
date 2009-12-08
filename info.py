@@ -98,7 +98,7 @@ def fs_display(mount='/'):
 	p1 = Popen(['df', '-Th', mount], stdout=PIPE).communicate()[0]
 	part = [line for line in p1.split('\n') if line][1].split()[3].rpartition('/')[2]
 	if len(mount) == 1:
-		fs = '/'
+		fs = 'Root'
 	else:
 		fs = mount.rpartition('/')[2].title()
 	output (fs, part)
