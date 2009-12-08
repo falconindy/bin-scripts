@@ -96,13 +96,16 @@ def packages_display():
 
 def fs_display(mount='/'):
 	p1 = Popen(['df', '-Th', mount], stdout=PIPE).communicate()[0]
-	part = [line for line in p1.split('\n') if line][1].split()[3]
-	if mount == '/': mount += 'root'
-	output (mount, part)
+	part = [line for line in p1.split('\n') if line][1].split()[3].rpartition('/')[2]
+	if len(mount) == 1:
+		fs = '/'
+	else:
+		fs = mount.rpartition('/')[2].title()
+	output (fs, part)
 
-# Values to display.	
+# Values to display:
 # Possible options: os, kernel, uptime, battery, de, wm, packages, fs.
-display = ['os', 'kernel', 'uptime', 'wm', 'packages', 'fs:/', 'fs:/home', 'fs']
+display = ['os', 'kernel', 'uptime', 'wm', 'packages', 'fs:/', 'fs:/home']
 
 for x in display:
 	call = [arg for arg in x.split(':') if arg]
