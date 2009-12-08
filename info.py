@@ -53,10 +53,15 @@ def kernel_display():
 
 def uptime_display():
 	fuptime = open('/proc/uptime').read().split(' ')[0].split('.')[0]
-	day = int(fuptime)/86400
-	hour = (int(fuptime) / 3600) - (24 * (int(fuptime) / 86400))
-	minute = (int(fuptime) / 60) - (60 * (int(fuptime) / 3600))
-	uptime = '%d days, %d:%2d' % (day, hour, minute)
+	day = int(fuptime) / 86400
+	fuptime = int(fuptime) % 86400
+	hour = (int(fuptime / 3600))
+	fuptime = int(fuptime) % 3600
+	minute = (int(fuptime) / 60)
+	uptime = ''
+	if day > 0:
+		uptime += '%d days, ' % day
+	uptime += '%d:%2d' % (hour, minute)
 	output('Uptime', uptime)
  
 def battery_display():
