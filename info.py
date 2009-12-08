@@ -8,7 +8,7 @@ clear = "\x1b[0m"
 # color = "\x1b[1;30m" # black
 # color2 = "\x1b[0;30m" # black
 
-# color = "\x1b[1;31m" # red 
+# color = "\x1b[1;31m" # redg
 # color2 = "\x1b[0;30m" # red
 
 # color = "\x1b[1;32m" # green
@@ -31,7 +31,7 @@ color2 = "\x1b[0;34m" # blue
 
 # Define arrays containing values.
 list = []
-blank = [ '', '', '', '', '', '', '', '', '' ] 
+blank = [ '', '', '', '', '', '', '', '', '' ]
 
 # Find running processes
 p1 = Popen(['ps', '-A'], stdout=PIPE)
@@ -44,8 +44,8 @@ def output(key, value):
 	output = "%s%s:%s %s" % (color, key, clear, value)
 	list.append(output)
 
-def os_display(): 
-	os = "Arch Linux"	
+def os_display():
+	os = "Arch Linux"
 	output('OS', os)
 
 def kernel_display():
@@ -53,13 +53,12 @@ def kernel_display():
 	output ('Kernel', kernel)
 
 def uptime_display():
-	p1 = Popen(['uptime'], stdout=PIPE)
-	p2 = Popen(['sed', '-e', 's/^.*up //', '-e', 's/, *[0-9]*.users.*//'], stdin=p1.stdout, stdout=PIPE)
-	uptime = p2.communicate()[0].rstrip("\n")
+	p1 = Popen(['uptime'], stdout=PIPE).communicate()[0].lstrip()
+	uptime = " ".join(p1.split(' ')[2:5]).rstrip(',')
 	output ('Uptime', uptime)
-	p1 = p2 = None
+	p1 = None
 
-def battery_display(): 
+def battery_display():
 	p1 = Popen(['acpi'], stdout=PIPE)
 	p2 = Popen(['sed', 's/.*, //'], stdin=p1.stdout, stdout=PIPE)
 	battery = p2.communicate()[0].rstrip("\n")
@@ -67,8 +66,7 @@ def battery_display():
 	p1 = p2 = None
 
 def de_display():
-	dict = {'gnome-session': 'GNOME',
-		'ksmserver': 'KDE',
+	dict = {'gnome-session': 'GNOME', 'ksmserver': 'KDE',
 		'xfce-mcs-manager': 'Xfce'}
 	de = 'None found'
 	for key in dict.keys():
@@ -89,25 +87,26 @@ def wm_display():
 	'openbox': 'Openbox',
 	'wmaker': 'Window Maker',
 	'xfwm4': 'Xfwm',
-	'xmonad': 'Xmonad'}  
+	'xmonad': 'Xmonad'}
 	wm = 'None found'
 	for key in dict.keys():
 		if key in processes: wm = dict[key]
 	output ('WM', wm)
 
 def packages_display():
-	p1 = Popen(['pacman', '-Q'], stdout=PIPE)
-	p2 = Popen(['wc', '-l'], stdin=p1.stdout, stdout=PIPE)
-	packages = p2.communicate()[0].rstrip("\n")
+	packages = len(Popen(['pacman', '-Q'], stdout=PIPE).communicate()[0].split('\n')) - 1
 	output ('Packages', packages)
 
 def fs_display():
-	p1 = Popen(['df', '-Th'], stdout=PIPE)
-	p2 = Popen(['grep', '/$'], stdin=p1.stdout, stdout=PIPE)
-	p3 = Popen(['awk', '{print $4}'], stdin=p2.stdout, stdout=PIPE)
-	root = p3.communicate()[0].rstrip("\n")
+	p1 = Popen(['df', '-Th'], stdout=PIPE).communicate()[0]
+	drives = [line for line in p1.split('\n') if line]
+	for line in drives:
+		if line.endswith('/'):
+			root = line.split()[3]
+			break
+	
 	output ('Root', root)
-	p1 = p2 = p3 = None
+	p1 = None
 
 
 # Values to display.	
@@ -123,8 +122,8 @@ list.extend(blank)
 
 # Result
 print """%s
-%s               +                
-%s               #                
+%s               +
+%s               #
 %s              ###               %s
 %s             #####              %s
 %s             ######             %s
@@ -138,7 +137,7 @@ print """%s
 %s    .#######;     ;#####.       %s
 %s    #########.   .########`     %s
 %s   ######'           '######    %s
-%s  ;####                 ####;   
-%s  ##'                     '##   
-%s #'                         `#  %s                          
+%s  ;####                 ####;
+%s  ##'                     '##
+%s #'                         `#  %s
 """ % (color, color, color, color, list[0], color, list[1], color, list[2], color, list[3], color, list[4], color, list[5], color, color2, color, list[6], color, color2, color, list[7], color, color2, list[8], color2, list[9], color2, list[10], color2, list[10], color2, list[10], color2, color2, color2, clear)
