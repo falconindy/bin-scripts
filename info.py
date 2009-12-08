@@ -52,12 +52,12 @@ def kernel_display():
 	output('Kernel', kernel)
 
 def uptime_display():
-	fuptime = open('/proc/uptime').read().split(' ')[0].split('.')[0]
-	day = int(fuptime) / 86400
-	fuptime = int(fuptime) % 86400
-	hour = (int(fuptime / 3600))
-	fuptime = int(fuptime) % 3600
-	minute = (int(fuptime) / 60)
+	fuptime = int(open('/proc/uptime').read().split(' ')[0].split('.')[0])
+	day = int(fuptime / 86400)
+	fuptime = fuptime % 86400
+	hour = int(fuptime / 3600)
+	fuptime = fuptime % 3600
+	minute = int(fuptime / 60)
 	uptime = ''
 	if day > 0:
 		uptime += '%d days, ' % day
