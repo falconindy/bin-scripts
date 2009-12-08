@@ -39,93 +39,93 @@ p1 = None
 
 # Print coloured key with normal value.
 def output(key, value):
-	output = "%s%s:%s %s" % (color, key, clear, value)
-	list.append(output)
+    output = "%s%s:%s %s" % (color, key, clear, value)
+    list.append(output)
 
 def os_display():
-	arch = Popen(['uname', '-m'], stdout=PIPE).communicate()[0].rstrip('\n')
-	os = "Arch Linux %s" % arch
-	output('OS', os)
+    arch = Popen(['uname', '-m'], stdout=PIPE).communicate()[0].rstrip('\n')
+    os = "Arch Linux %s" % arch
+    output('OS', os)
 
 def kernel_display():
-	kernel = Popen(['uname', '-r'], stdout=PIPE).communicate()[0].rstrip("\n")
-	output('Kernel', kernel)
+    kernel = Popen(['uname', '-r'], stdout=PIPE).communicate()[0].rstrip("\n")
+    output('Kernel', kernel)
 
 def uptime_display():
-	fuptime = int(open('/proc/uptime').read().split(' ')[0].split('.')[0])
-	day = int(fuptime / 86400)
-	fuptime = fuptime % 86400
-	hour = int(fuptime / 3600)
-	fuptime = fuptime % 3600
-	minute = int(fuptime / 60)
-	uptime = ''
-	if day > 0:
-		uptime += '%d days, ' % day
-	uptime += '%d:%2d' % (hour, minute)
-	output('Uptime', uptime)
+    fuptime = int(open('/proc/uptime').read().split(' ')[0].split('.')[0])
+    day = int(fuptime / 86400)
+    fuptime = fuptime % 86400
+    hour = int(fuptime / 3600)
+    fuptime = fuptime % 3600
+    minute = int(fuptime / 60)
+    uptime = ''
+    if day > 0:
+        uptime += '%d days, ' % day
+    uptime += '%d:%2d' % (hour, minute)
+    output('Uptime', uptime)
  
 def battery_display():
-	p1 = Popen(['acpi'], stdout=PIPE)
-	p2 = Popen(['sed', 's/.*, //'], stdin=p1.stdout, stdout=PIPE)
-	battery = p2.communicate()[0].rstrip("\n")
-	output('Battery', battery)
+    p1 = Popen(['acpi'], stdout=PIPE)
+    p2 = Popen(['sed', 's/.*, //'], stdin=p1.stdout, stdout=PIPE)
+    battery = p2.communicate()[0].rstrip("\n")
+    output('Battery', battery)
 
 def de_display():
-	dict = {'gnome-session': 'GNOME', 'ksmserver': 'KDE',
-		'xfce-mcs-manager': 'Xfce'}
-	de = 'None found'
-	for key in dict.keys():
-		if key in processes: de = dict[key]
-	output('DE', de)
+    dict = {'gnome-session': 'GNOME', 'ksmserver': 'KDE',
+        'xfce-mcs-manager': 'Xfce'}
+    de = 'None found'
+    for key in dict.keys():
+        if key in processes: de = dict[key]
+    output('DE', de)
 
 def wm_display():
-	dict = {'awesome': 'Awesome',
-	'beryl': 'Beryl',
-	'blackbox': 'Blackbox',
-	'dwm': 'DWM',
-	'enlightenment': 'Enlightenment',
-	'fluxbox': 'Fluxbox',
-	'fvwm': 'FVWM',
-	'icewm': 'icewm',
-	'kwin': 'kwin',
-	'metacity': 'Metacity',
-	'openbox': 'Openbox',
-	'wmaker': 'Window Maker',
-	'xfwm4': 'Xfwm',
-	'xmonad': 'Xmonad'}
-	wm = 'None found'
-	for key in dict.keys():
-		if key in processes: wm = dict[key]
-	output('WM', wm)
+    dict = {'awesome': 'Awesome',
+    'beryl': 'Beryl',
+    'blackbox': 'Blackbox',
+    'dwm': 'DWM',
+    'enlightenment': 'Enlightenment',
+    'fluxbox': 'Fluxbox',
+    'fvwm': 'FVWM',
+    'icewm': 'icewm',
+    'kwin': 'kwin',
+    'metacity': 'Metacity',
+    'openbox': 'Openbox',
+    'wmaker': 'Window Maker',
+    'xfwm4': 'Xfwm',
+    'xmonad': 'Xmonad'}
+    wm = 'None found'
+    for key in dict.keys():
+        if key in processes: wm = dict[key]
+    output('WM', wm)
 
 def packages_display():
-	packages = len(Popen(['pacman', '-Q'], stdout=PIPE).communicate()[0].split('\n')) - 1
-	output('Packages', packages)
+    packages = len(Popen(['pacman', '-Q'], stdout=PIPE).communicate()[0].split('\n')) - 1
+    output('Packages', packages)
 
 def fs_display(mount='/'):
-	p1 = Popen(['df', '-h', mount], stdout=PIPE).communicate()[0]
-	part = [line for line in p1.split('\n') if line][1].split()[1].rpartition('/')[2]
-	if len(mount) == 1:
-		fs = 'Root'
-	else:
-		fs = mount.rpartition('/')[2].title()
-	output(fs, part)
+    p1 = Popen(['df', '-h', mount], stdout=PIPE).communicate()[0]
+    part = [line for line in p1.split('\n') if line][1].split()[1].rpartition('/')[2]
+    if len(mount) == 1:
+        fs = 'Root'
+    else:
+        fs = mount.rpartition('/')[2].title()
+    output(fs, part)
 
 def blank_display():
-	list.append('')
+    list.append('')
 
 # Values to display:
 # Possible options: os, kernel, uptime, battery, de, wm, packages, fs, blank
 display = ['os', 'kernel', 'uptime', 'wm', 'packages', 'blank', 'fs=/', 'fs=/usr', 'fs=/home', 'fs=/mnt/Destruction', 'fs=/mnt/Entropy', 'fs=/mnt/Gluttony']
 
 for x in display:
-	call = [arg for arg in x.split('=') if arg]
-	funcname=call[0] + "_display"
-	func=locals()[funcname]
-	if len(call) > 1:
-		func(call[1])
-	else:
-		func()
+    call = [arg for arg in x.split('=') if arg]
+    funcname=call[0] + "_display"
+    func=locals()[funcname]
+    if len(call) > 1:
+        func(call[1])
+    else:
+        func()
 
 list.extend([' ']*(13 - len(display)))
 
