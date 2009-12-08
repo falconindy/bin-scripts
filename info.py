@@ -34,10 +34,9 @@ list = []
 blank = [ '', '', '', '', '', '', '', '', '' ]
 
 # Find running processes
-p1 = Popen(['ps', '-A'], stdout=PIPE)
-p2 = Popen(['awk', '{print $4}'], stdin=p1.stdout, stdout=PIPE)
-processes = p2.communicate()[0].split("\n")
-p1 = p2 = None
+p1 = Popen(['ps', '-A'], stdout=PIPE).communicate()[0].split('\n')
+processes = [process.split()[3] for process in p1 if process]
+p1 = None
 
 # Print coloured key with normal value.
 def output(key, value):
@@ -56,14 +55,12 @@ def uptime_display():
 	p1 = Popen(['uptime'], stdout=PIPE).communicate()[0].lstrip().split(' ')
 	uptime = " ".join(p1[2:(p1.index(''))]).rstrip(',')
 	output ('Uptime', uptime)
-	p1 = None
 
 def battery_display():
 	p1 = Popen(['acpi'], stdout=PIPE)
 	p2 = Popen(['sed', 's/.*, //'], stdin=p1.stdout, stdout=PIPE)
 	battery = p2.communicate()[0].rstrip("\n")
 	output ('Battery', battery)
-	p1 = p2 = None
 
 def de_display():
 	dict = {'gnome-session': 'GNOME', 'ksmserver': 'KDE',
@@ -106,8 +103,6 @@ def fs_display():
 			break
 	
 	output ('Root', root)
-	p1 = None
-
 
 # Values to display.	
 # Possible options: os, kernel, uptime, battery, de, wm, packages, fs.
