@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 # chandl.py
 # author: Thomas Dziedzic
@@ -82,13 +82,13 @@ for page in pages:
     f.close()
     class ImageParser(HTMLParser):
         skipNext = False #4chan includes 2 consecutive links to the same image.
-        
+
         def handle_starttag(self, tag, attrs):
             if tag == "a" and not self.skipNext:
                 link = attrs[0][1]
                 filename = link.split('/')[-1]
                 fileext = filename.split('.')[-1]
-                if fileext == 'jpg' and not os.path.exists(os.path.join(path, filename)):
+                if (fileext == 'jpg' or fileext == 'png' or fileext == 'gif') and not os.path.exists(os.path.join(path, filename)):
                     f = urllib.urlopen(link)
                     print link
                     s = f.read()
@@ -103,3 +103,4 @@ for page in pages:
     parser = ImageParser()
     parser.feed(s)
     parser.close()
+
