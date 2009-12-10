@@ -1,5 +1,7 @@
 #!/bin/bash
 
-while true; do
+conky | while read line; do
+    xsetroot -name "$line";
+done | while true; do
 	dwm 2> ~/.dwm.log
-done;
+done
