@@ -25,7 +25,7 @@ stat_done
 
 stat_busy "Unmounting old UnionFS"
  umount -l /${1}
- umount -l ${SQUASH_ROOT}/${1}/ro
+ umount -l -d ${SQUASH_ROOT}/${1}/ro
 stat_done
 
 stat_busy "Replacing with new SquashFS"
