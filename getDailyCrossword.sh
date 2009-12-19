@@ -22,10 +22,10 @@ COOKIE_JAR=cookies.tmp
 WEB_PAGE=tmp.html
 LOGIN_PAGE=http://www.nytimes.com/auth/login
 USERNAME="USERID=gerald@thereisners.net"
-PASSWORD="PASSWORD=dav1d1"
+PASSWORD="PASSWORD=dav1d123"
 XWORD_URL="http://select.nytimes.com/premium/xword/$DATESTRING.puz"
 HIDDEN_FIELDS="is_continue=true&URI=http://&OQ=&OP=Submit2=Log%20In"
-OUTPUT_DIR="$HOME/Desktop"
+OUTPUT_DIR="$HOME"
 
 echo -n "Logging in... "
 curl --silent --cookie-jar $COOKIE_JAR \
