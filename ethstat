@@ -1,12 +1,15 @@
 #!/bin/bash
 
+[[ ! -f /usr/bin/bc ]] && echo "Please install bc" && exit 1
+
 echo "Network Device Statistics (in mb)"
-printf "\n%8s%10s%10s\n" "Device" "Sent" "Received" #Header
-#echo ------------------------------
+printf "\n%8s%10s%10s%8s\n" "Device" "Sent" "Received" "Ratio"
+#echo ---------------------------------------
 for dev in $(ls /sys/class/net); do
 	stats=($(cat /proc/net/dev | grep $dev | cut -d: -f2 | awk '{print $1,$9}'))
 	sent=$(echo "scale=2;${stats[0]} / 1024 / 1024" | bc)
-	recv=$(echo "scale=2;${stats[1]} / 1024 / 1024" | bc) 
-	printf "%8s%10.2f%10.2f\n" $dev $sent $recv
+	recv=$(echo "scale=2;${stats[1]} / 1024 / 1024" | bc)
+    ratio=$(echo "scale=2;$sent / $recv " | bc)
+	printf "%8s%10.2f%10.2f%8.2f\n" $dev $sent $recv $ratio
 done
 echo 
