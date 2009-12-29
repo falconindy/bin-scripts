@@ -61,7 +61,7 @@ def uptime_display():
     uptime = ''
     if day > 0:
         uptime += '%d days, ' % day
-    uptime += '%d:%2d' % (hour, minute)
+    uptime += '%d:%02d' % (hour, minute)
     output('Uptime', uptime)
  
 def battery_display():
