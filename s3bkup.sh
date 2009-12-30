@@ -52,23 +52,5 @@ echo "Executing rsync with: ${COMMAND[@]:1:${#COMMAND[@]}}" | tee -a $LOGFILE >&
 # Enough talk. Fucking do it already.
 "${COMMAND[@]}" | tee -a $LOGFILE >&6
 
-#Explanation of arguments in rsync
-#   -R = use relative path names
-#   -u = skip files that are newer on the receiver
-#   -a = equivalent of -rlptgoD
-#     -r = recurse into directories
-#     -l = copy symlinks as symlinks
-#     -p = preserve permissions
-#     -t = preserve modification times
-#     -g = preserve group
-#     -o = preserve owner
-#     -D = preserve special and device files
-#   --stats = give some file-transfer stats
-#   --delete = delete extraneous files from destination dirs
-#   --size-only = skip files that match in size
-#   --exclude-from = path to our exclusion file
-#
-# NOTE: -n can be added to the execution to create a dry-run!
-
 finish
 
