@@ -7,27 +7,31 @@ DESTINATION=${BKUP_ROOT}/${BKUP_SUFFIX}/
 EXCLUSION_LIST="/tmp/exclude.conf"
 LOGFILE="/mnt/Gluttony/backup/s3bkup.log"
 
+exec 6>&1 #save a descriptor pointing to STDOUT
+exec >> $LOGFILE #redirect all to log
+
 # Start logging
-echo "-------------------------------------------------" >> $LOGFILE
-echo "Backup starting at `date +'%D %T'` with parameter: $1" | tee -a $LOGFILE		# timestamp this bad agent
+echo "-------------------------------------------------"
+echo "Backup starting at `date +'%D %T'` with parameter: $1"    # timestamp this bad agent
 
 # Pre-emptively declare ending procedure since we're not sure when we're exiting (in case of error)
 finish() {
 	[[ -f "$EXCLUSION_LIST" ]] && rm "$EXCLUSION_LIST"	# remove our temp file for exclusions if it exists
 	echo "Backup ended at `date +'%D %T'`"	# timestamp this bad agent
 	echo >> $LOGFILE
+    exec 1>&6 6>&- #STDOUT back to STDOUT and destroy descriptor 6
 	exit
 }
 
 # Are we root?
 if [[ `id -u` -ne 0 ]]; then
-	echo "ERROR: Permission denied. Must be root." | tee -a $LOGFILE
+	echo "ERROR: Permission denied. Must be root." >&2
 	finish
 fi
 
 # Was a config file specified? Does it exist?
 if [[ -z $1 ]] && [[ -f $1 ]]; then
-	echo "ERROR: Unspecified or invalid config file." | tee -a $LOGFILE
+	echo "ERROR: Unspecified or invalid config file." >&2
 	finish
 fi
 
@@ -36,31 +40,19 @@ if [[ ! -d $DESTINATION ]]; then
 	mkdir -p $DESTINATION
 fi
 
-# Determine our includes (what we'll be backing up)
+# Determine includes and excudes (TODO: convert to one or the other, not both)
 INCLUDES=(`grep -vE "^#" $1 | sed -n '/<include>/,/<\/include>/p' | grep -vE "</?include>" | sed 's/^[ \t]*//;s/[ \t]*$//'`)
-
-# Check to make sure our includes are all mounted
-#for i in ${INCLUDES[@]}; do
-#	if [[ `ls -ls $i | grep "total" | cut -d' ' -f2` -eq "0" ]]; then
-#		echo "ERROR: Location $i not mounted! Halting backup." | tee -a $LOGFILE
-#		finish
-#	fi
-#done
-
-# Determine our excludes (what won't get backed up)
 grep -vE "^#" $1 | sed -n '/<exclude>/,/<\/exclude>/p' | grep -vE "</?exclude>" | sed 's/^[ \t]*//;s/[ \t]*$//' > "$EXCLUSION_LIST"
 
-# Declare an array of options
+# Create the backup command
 OPTIONS=("-Rua" "--delete" "--stats" "--exclude-from=$EXCLUSION_LIST")
-
-# Declare our command
 COMMAND=("rsync" "${OPTIONS[@]}" "${INCLUDES[@]}" "$DESTINATION")
 
 echo "Executing rsync as:"
-echo "  ${COMMAND[@]}" | tee -a $LOGFILE
+echo "  ${COMMAND[@]}"
 
 # Enough talk. Fucking do it already.
-"${COMMAND[@]}" | tee -a $LOGFILE
+"${COMMAND[@]}"
 
 #Explanation of arguments in rsync
 #	-R = use relative path names
