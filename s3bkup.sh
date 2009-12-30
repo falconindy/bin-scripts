@@ -2,8 +2,6 @@
 
 # Static Declarations
 BKUP_ROOT="/mnt/Gluttony/backup"
-BKUP_SUFFIX=`basename $1 | awk -F. '{print $2}'`
-DESTINATION=${BKUP_ROOT}/${BKUP_SUFFIX}/
 EXCLUSION_LIST="/tmp/exclude.conf"
 LOGFILE="/mnt/Gluttony/backup/s3bkup.log"
 
@@ -29,12 +27,14 @@ if [[ `id -u` -ne 0 ]]; then
 fi
 
 # Was a config file specified? Does it exist?
-if [[ -z $1 ]] && [[ -f $1 ]]; then
+if [[ -z $1 ]] || [[ ! -f $1 ]]; then
 	echo "ERROR: Unspecified or invalid config file." >&2
 	finish
 fi
+BKUP_SUFFIX=`basename $1 | awk -F. '{print $2}'`
 
 # Does our suffix exist? Create it if it doesn't
+DESTINATION=${BKUP_ROOT}/${BKUP_SUFFIX}/
 if [[ ! -d $DESTINATION ]]; then
 	mkdir -p $DESTINATION
 fi
@@ -50,7 +50,7 @@ COMMAND=("rsync" "${OPTIONS[@]}" "${INCLUDES[@]}" "$DESTINATION")
 echo "Executing rsync as: ${COMMAND[@]}" | tee -a $LOGFILE >&6
 
 # Enough talk. Fucking do it already.
-"${COMMAND[@]}"
+"${COMMAND[@]}" | tee -a $LOGFILE >&6
 
 #Explanation of arguments in rsync
 #   -R = use relative path names
