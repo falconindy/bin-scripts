@@ -47,7 +47,7 @@ grep -vE "^#" $1 | sed -n '/<exclude>/,/<\/exclude>/p' | grep -vE "</?exclude>" 
 OPTIONS=("-Rua" "--delete" "--stats" "--exclude-from=$EXCLUSION_LIST")
 COMMAND=("rsync" "${OPTIONS[@]}" "${INCLUDES[@]}" "$DESTINATION")
 
-echo "Executing rsync as: ${COMMAND[@]}" | tee -a $LOGFILE >&6
+echo "Executing rsync with: ${COMMAND[@]:1:${#COMMAND[@]}}" | tee -a $LOGFILE >&6
 
 # Enough talk. Fucking do it already.
 "${COMMAND[@]}" | tee -a $LOGFILE >&6
