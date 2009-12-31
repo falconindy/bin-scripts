@@ -14,29 +14,30 @@ echo "Backup starting at `date +'%D %T'` with parameter: $1" | tee -a $LOGFILE >
 
 # Pre-emptively declare ending procedure since we're not sure when we're exiting (in case of error)
 finish() {
-	[[ -f "$EXCLUSION_LIST" ]] && rm "$EXCLUSION_LIST"	# remove our temp file for exclusions if it exists
-	echo "Backup ended at `date +'%D %T'`" | tee -a $LOGFILE >&6
+    [[ -f "$EXCLUSION_LIST" ]] && rm "$EXCLUSION_LIST"	# remove our temp file for exclusions if it exists
+    echo "Backup ended at `date +'%D %T'`" | tee -a $LOGFILE >&6
     exec 1>&6 6>&- #STDOUT back to STDOUT and destroy descriptor 6
-	exit
+    exit
 }
 
 # Are we root?
 if [[ `id -u` -ne 0 ]]; then
-	echo "ERROR: Permission denied. Must be root." >&2
-	finish
+    echo "ERROR: Permission denied. Must be root." >&2
+    finish
 fi
 
 # Was a config file specified? Does it exist?
 if [[ -z $1 ]] || [[ ! -f $1 ]]; then
-	echo "ERROR: Unspecified or invalid config file." >&2
-	finish
+    echo "ERROR: Unspecified or invalid config file." >&2
+    finish
 fi
 BKUP_SUFFIX=`basename $1 | awk -F. '{print $2}'`
 
 # Does our suffix exist? Create it if it doesn't
 DESTINATION=${BKUP_ROOT}/${BKUP_SUFFIX}/
 if [[ ! -d $DESTINATION ]]; then
-	mkdir -p $DESTINATION
+    echo "Destination '$DESTINATION' did not exist -- creating it"
+    mkdir -p $DESTINATION
 fi
 
 # Determine includes and excudes (TODO: convert to one or the other, not both)
