@@ -40,7 +40,7 @@ fi
 
 # Determine includes and excudes
 INCLUDES=(`grep -vE "^#" $1 | sed -n '/<include>/,/<\/include>/p' | grep -vE "</?include>" | sed 's/^[ \t]*//;s/[ \t]*$//'`)
-EXCLUDES=(`grep -vE ^# s3bkup.quake.conf | sed -n '/<exclude>/,/<\/exclude>/p' | grep -vE "exclude>$" | sed -n 's/^/--exclude/p'`)
+EXCLUDES=(`grep -vE ^# $1 | sed -n '/<exclude>/,/<\/exclude>/p' | grep -vE "exclude>$" | sed -n 's/^/--exclude/p'`)
 
 # Create the backup command
 OPTIONS=("-Rua" "--delete" "--stats")
