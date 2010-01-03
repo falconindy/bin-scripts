@@ -2,7 +2,6 @@
 
 # Static Declarations
 BKUP_ROOT="/mnt/Gluttony/backup"
-EXCLUSION_LIST="/tmp/exclude.conf"
 LOGFILE="/mnt/Gluttony/backup/s3bkup.log"
 
 exec 6>&1 #save a descriptor pointing to STDOUT
@@ -14,7 +13,6 @@ echo "Backup starting at `date +'%D %T'` with parameter: $1" | tee -a $LOGFILE >
 
 # Pre-emptively declare ending procedure since we're not sure when we're exiting (in case of error)
 finish() {
-    [[ -f "$EXCLUSION_LIST" ]] && rm "$EXCLUSION_LIST"	# remove our temp file for exclusions if it exists
     echo "Backup ended at `date +'%D %T'`" | tee -a $LOGFILE >&6
     exec 1>&6 6>&- #STDOUT back to STDOUT and destroy descriptor 6
     exit
@@ -40,13 +38,13 @@ if [[ ! -d $DESTINATION ]]; then
     mkdir -p $DESTINATION
 fi
 
-# Determine includes and excudes (TODO: convert to one or the other, not both)
+# Determine includes and excudes
 INCLUDES=(`grep -vE "^#" $1 | sed -n '/<include>/,/<\/include>/p' | grep -vE "</?include>" | sed 's/^[ \t]*//;s/[ \t]*$//'`)
-grep -vE "^#" $1 | sed -n '/<exclude>/,/<\/exclude>/p' | grep -vE "</?exclude>" | sed 's/^[ \t]*//;s/[ \t]*$//' > "$EXCLUSION_LIST"
+EXCLUDES=(`grep -vE ^# s3bkup.quake.conf | sed -n '/<exclude>/,/<\/exclude>/p' | grep -vE "exclude>$" | sed -n 's/^/--exclude/p'`)
 
 # Create the backup command
-OPTIONS=("-Rua" "--delete" "--stats" "--exclude-from=$EXCLUSION_LIST")
-COMMAND=("rsync" "${OPTIONS[@]}" "${INCLUDES[@]}" "$DESTINATION")
+OPTIONS=("-Rua" "--delete" "--stats")
+COMMAND=("rsync" "${OPTIONS[@]}" "${EXCLUDES[@]}" "${INCLUDES[@]}" "$DESTINATION")
 
 echo "Executing rsync with: ${COMMAND[@]:1:${#COMMAND[@]}}" | tee -a $LOGFILE >&6
 
