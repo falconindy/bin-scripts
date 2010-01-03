@@ -33,10 +33,7 @@ BKUP_SUFFIX=`basename $1 | awk -F. '{print $2}'`
 
 # Does our suffix exist? Create it if it doesn't
 DESTINATION=${BKUP_ROOT}/${BKUP_SUFFIX}/
-if [[ ! -d $DESTINATION ]]; then
-    echo "Destination '$DESTINATION' did not exist -- creating it"
-    mkdir -p $DESTINATION
-fi
+[[ ! -d $DESTINATION ]] && mkdir -p $DESTINATION
 
 # Determine includes and excudes
 INCLUDES=(`grep -vE "^#" $1 | sed -n '/<include>/,/<\/include>/p' | grep -vE "</?include>" | sed 's/^[ \t]*//;s/[ \t]*$//'`)
