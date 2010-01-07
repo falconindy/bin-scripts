@@ -1,138 +1,201 @@
 #!/usr/bin/env python
+#
+# archey [version 0.1-4]
+#
+# Maintained by Melik Manukyan <melik@archlinux.us>
+# Distributed under the terms of the GNU General Public License v3.
+# See http://www.gnu.org/licenses/gpl.txt for the full license text.
+#
+# Program to display an Archlinux logo in ASCII art along with basic
+# System information.
 
+# Import libraries
+import subprocess, optparse, re
 from subprocess import Popen, PIPE
+from optparse import OptionParser
+
+# Display
+# Comment/Uncomment to Enable/Disable information.
+display = [
+	'os', # Display OS
+	'hostname', # Display Machine Hostname
+	'kernel',  # Display Kernel
+#	'battery', # Display Battery info [Requires 'acpi']
+	'uptime',  # Display Uptime
+	'wm',  # Display WM
+	'de', # Display DE
+	'packages', # Display Number of Packages Installed
+	'ram', # Display RAM usage
+	'cpu', # Display CPU 
+#	'fs:/boot', # Display /boot partition
+#	'fs:/home', # Display /home partition
+#	'fs:/MOUNT/POINT', # Display any partition, edit to your needs
+	'fs:/' # Display / partition
+	]
+# Array containing Values
+result = []
+
+# Options
+if __name__=='__main__':
+	parser = OptionParser(usage='%prog [-c COLOR] [-s, --screenshot]', description='To customize the data displayed on archey, edit "/usr/bin/archey" directly and look for the display array. Note: Archey can only allow up to 15 fields.')
+	parser.add_option('-c',
+		action='store', default='blue', type='choice', dest='color', choices=('black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'), help='choose a color: black, red, green, yellow, blue, magenta, cyan, white [Default: blue]')
+	parser.add_option('-s', '--screenshot',
+		action='store_true', dest='screenshot', help='take a screenshot')
+	(options, args) = parser.parse_args()
 
 # Define colors
-clear = "\x1b[0m"
+colorscheme = '%s' % options.color
+colors = {'black': '0', 'red': '1', 'green': '2', 'yellow': '3', 'blue': '4', 'magenta': '5', 'cyan': '6', 'white': '7'}
+for key in colors.keys():
+	if key in colorscheme: colorcode = colors[key]				
+color = '\x1b[1;3%sm' % colorcode
+color2 = '\x1b[0;3%sm' % colorcode
+clear = '\x1b[0m'
 
-# color = "\x1b[1;30m" # black
-# color2 = "\x1b[0;30m" # black
+# Define processes for identifying DEs or WMs.
+de_dict = {'gnome-session': 'GNOME',
+           'ksmserver': 'KDE',
+           'xfce-mcs-manager': 'Xfce 4',
+           'xfconfd': 'Xfce 4.6'}
+           
+wm_dict = {'awesome': 'Awesome',
+           'beryl': 'Beryl',
+           'blackbox': 'Blackbox',
+           'compiz': 'Compiz',
+           'dwm': 'DWM',
+           'enlightenment': 'Enlightenment',
+           'fluxbox': 'Fluxbox',
+           'fvwm': 'FVWM',
+           'icewm': 'icewm',
+           'kwin': 'KWin',
+           'metacity': 'Metacity',
+           'openbox': 'Openbox',
+	   'musca': 'Musca',
+           'wmaker': 'Window Maker',
+           'wmii': 'wmii',
+           'xfwm4': 'Xfwm',
+           'xmonad': 'xmonad'}
 
-# color = "\x1b[1;31m" # red
-# color2 = "\x1b[0;30m" # red
-
-# color = "\x1b[1;32m" # green
-# color2 = "\x1b[0;32m" # green
-
-# color = "\x1b[1;33m" # yellow
-# color2 = "\x1b[0;33m" # yellow
-
-color = "\x1b[1;34m" # blue
-color2 = "\x1b[0;34m" # blue
-
-# color = "\x1b[1;35m" # magenta
-# color2 = "\x1b[0;35m" # magenta
-
-# color = "\x1b[1;36m" # cyan
-# color2 = "\x1b[0;36m" # cyan
-
-# color = "\x1b[1;37m" # white
-# color2 = "\x1b[0;37m" # white
-
-# Define arrays containing values.
-list = []
-
-# Find running processes
+# Find running processes.
 p1 = Popen(['ps', '-A'], stdout=PIPE).communicate()[0].split('\n')
 processes = [process.split()[3] for process in p1 if process]
 p1 = None
 
 # Print coloured key with normal value.
 def output(key, value):
-    output = "%s%s:%s %s" % (color, key, clear, value)
-    list.append(output)
+	output = '%s%s:%s %s' % (color, key, clear, value)
+	result.append(output)
 
-def os_display():
-    arch = Popen(['uname', '-m'], stdout=PIPE).communicate()[0].rstrip('\n')
-    os = "Arch Linux %s" % arch
-    output('OS', os)
+# Screenshot Function
+screen = '%s' % options.screenshot
 
+# RAM Function
+def ram_display():
+        raminfo = Popen(['free', '-m'], stdout=PIPE).communicate()[0].split('\n')
+        ram = ''.join(filter(re.compile('M').search, raminfo)).split()
+        used = int(ram[2]) - int(ram[5]) - int(ram[6])
+        output ('RAM', '%s MB / %s MB' % (used, ram[1]))
+
+def screenshot():
+	subprocess.check_call(['scrot', '-cd5'])
+
+# Operating System Function
+def os_display(): 
+	arch = Popen(['uname', '-m'], stdout=PIPE).communicate()[0].rstrip('\n')
+	os = 'Arch Linux %s' % (arch)
+	output('OS', os)
+
+# Kernel Function
 def kernel_display():
-    kernel = Popen(['uname', '-r'], stdout=PIPE).communicate()[0].rstrip("\n")
-    output('Kernel', kernel)
+	kernel = Popen(['uname', '-r'], stdout=PIPE).communicate()[0].rstrip('\n')
+	output ('Kernel', kernel)
 
+# Kernel Function
+def hostname_display():
+	hostname = Popen(['uname', '-n'], stdout=PIPE).communicate()[0].rstrip('\n')
+	output ('Hostname', hostname)
+
+# CPU Function
+def cpu_display():
+        file = open('/proc/cpuinfo').readlines()
+	cpuinfo = file[4].replace('model name\t: ', '').rstrip('\n').replace('\t', ' ').replace('\t\t', ' ').replace('  ', '').replace('   ', '').replace('    ', '').replace('     ', '').replace('     ', '')
+	output ('CPU', cpuinfo) 
+
+# Uptime Function
 def uptime_display():
-    fuptime = int(open('/proc/uptime').read().split(' ')[0].split('.')[0])
-    day = int(fuptime / 86400)
-    fuptime = fuptime % 86400
-    hour = int(fuptime / 3600)
-    fuptime = fuptime % 3600
-    minute = int(fuptime / 60)
-    uptime = ''
-    if day > 0:
-        uptime += '%d days, ' % day
-    uptime += '%d:%02d' % (hour, minute)
-    output('Uptime', uptime)
- 
-def battery_display():
-    p1 = Popen(['acpi'], stdout=PIPE).communicate()[0].split(',')
-    battery = p1[1]
-    output('Battery', battery)
+	fuptime = int(open('/proc/uptime').read().split('.')[0])
+	day = int(fuptime / 86400)
+	fuptime = fuptime % 86400
+	hour = int(fuptime / 3600)
+	fuptime = fuptime % 3600
+	minute = int(fuptime / 60)
+	uptime = ''
+	if day == 1:
+		uptime += '%d day, ' % day
+	if day > 1:
+		uptime += '%d days, ' % day
+	uptime += '%d:%02d' % (hour, minute)
+	output('Uptime', uptime)
 
+# Battery Function [Requires: acpi]
+def battery_display(): 
+	p1 = Popen(['acpi'], stdout=PIPE).communicate()[0].lstrip()
+	battery = p1.split(' ')[3].rstrip('\n')
+	output ('Battery', battery)
+
+# Desktop Environment Function 
 def de_display():
-    dict = {'gnome-session': 'GNOME',
-        'ksmserver': 'KDE',
-        'xfce-mcs-manager': 'Xfce'}
-    de = 'None found'
-    for key in dict.keys():
-        if key in processes: de = dict[key]
-    output('DE', de)
-
+	de = 'None found'
+	for key in de_dict.keys():
+		if key in processes: de = de_dict[key]
+	output ('DE', de)
+ 
+# Window Manager Function
 def wm_display():
-    dict = {'awesome': 'Awesome',
-    'beryl': 'Beryl',
-    'blackbox': 'Blackbox',
-    'dwm': 'DWM',
-    'enlightenment': 'Enlightenment',
-    'fluxbox': 'Fluxbox',
-    'fvwm': 'FVWM',
-    'icewm': 'icewm',
-    'kwin': 'kwin',
-    'metacity': 'Metacity',
-    'openbox': 'Openbox',
-    'wmaker': 'Window Maker',
-    'xfwm4': 'Xfwm',
-    'xmonad': 'Xmonad'}
-    wm = 'None found'
-    for key in dict.keys():
-        if key in processes: wm = dict[key]
-    output('WM', wm)
+	wm = 'None found'
+	for key in wm_dict.keys():
+		if key in processes: wm = wm_dict[key]
+	output ('WM', wm)
 
+# Packages Function
 def packages_display():
-    packages = len(Popen(['pacman', '-Q'], stdout=PIPE).communicate()[0].split('\n')) - 1
-    output('Packages', packages)
+	p1 = Popen(['pacman', '-Q'], stdout=PIPE)
+	p2 = Popen(['wc', '-l'], stdin=p1.stdout, stdout=PIPE)
+	packages = p2.communicate()[0].rstrip('\n')
+	output ('Packages', packages)
 
-def fs_display(mount='/'):
-    p1 = Popen(['df', '-h', mount], stdout=PIPE).communicate()[0]
-    part = [line for line in p1.split('\n') if line][1].split()[1].rpartition('/')[2]
-    if len(mount) == 1:
-        fs = 'Root'
-    else:
-        fs = mount.rpartition('/')[2].title()
-    output(fs, part)
+# File System Function
+def fs_display(mount=''):
+	p1 = Popen(['df', '-TPh', mount], stdout=PIPE).communicate()[0]
+	used = [line for line in p1.split('\n') if line][1]
+	used = used.split()[3]
+	total = [line for line in p1.split('\n') if line][1]
+	total = total.split()[2]
+	type = [line for line in p1.split('\n') if line][1]
+	type = type.split()[1]
+	if mount == '/': mount = '/root'
+	fs = mount.rpartition('/')[2].title() + " FS"
+	part = '%s / %s (%s)' % (used, total, type)
+   	output (fs, part)
 
-def blank_display():
-    list.append('')
-
-# Values to display:
-# Possible options: os, kernel, uptime, battery, de, wm, packages, fs, blank
-display = ['os', 'kernel', 'uptime', 'wm', 'packages', 'blank', 'fs=/', 'fs=/usr', 'fs=/home', 'fs=/mnt/Destruction', 'fs=/mnt/Entropy', 'fs=/mnt/Gluttony']
-
+# Run functions found in 'display' array.
 for x in display:
-    call = [arg for arg in x.split('=') if arg]
-    funcname=call[0] + "_display"
-    func=locals()[funcname]
-    if len(call) > 1:
-        func(call[1])
-    else:
-        func()
+	call = [arg for arg in x.split(':') if arg]
+	funcname=call[0] + '_display'
+	func=locals()[funcname]
+	if len(call) > 1:
+		func(arg)
+	else:
+		func()
 
-list.extend([' ']*(13 - len(display)))
+# Array containing values.
+result.extend(['']*(15 - len(display)))
 
-# Result
+###### Result #######
 print """%s
-%s               +
-%s               #
+%s               +                
+%s               #                %s
 %s              ###               %s
 %s             #####              %s
 %s             ######             %s
@@ -146,8 +209,10 @@ print """%s
 %s    .#######;     ;#####.       %s
 %s    #########.   .########`     %s
 %s   ######'           '######    %s
-%s  ;####                 ####;
-%s  ##'                     '##
-%s #'                         `#  %s
-""" % (color, color, color, color, list[0], color, list[1], color, list[2], color, list[3], color, list[4], color, list[5], color, color2, color, list[6], color, color2, color, list[7], color, color2, list[8], color2, list[9], color2, list[10], color2, list[11], color2, list[12], color2, color2, color2, clear)
+%s  ;####                 ####;   %s
+%s  ##'                     '##   
+%s #'                         `#  
+%s """ % (color, color, color, result[0], color, result[1], color, result[2], color, result[3], color, result[4], color, result[5], color, result[6], color, color2, color, result[7], color, color2, color, result[8], color, color2, result[9], color2, result[10], color2, result[11], color2, result[12], color2, result[13], color2, result[14], color2, color2, clear)
 
+if screen == 'True':
+	screenshot()
