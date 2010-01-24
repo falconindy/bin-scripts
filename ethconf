@@ -18,3 +18,4 @@ fi
 
 sudo ifconfig $iface $ip netmask $netmask broadcast $broadcast
 sudo route add default gw $gateway $iface
+sudo ifconfig $iface up
