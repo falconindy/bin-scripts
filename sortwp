@@ -15,9 +15,9 @@ ls | while read pic; do
     esac
 
     if [ ! -d "$wallpaper_root/$ratio/${dim[0]}x${dim[1]}" ]; then
-        mkdir -p $wallpaper_root/$ratio/${dim[0]}x${dim[1]}
+        mkdir -p "$wallpaper_root/$ratio/${dim[0]}x${dim[1]}"
     fi
 
-    mv -v "$pic" "$wallpaper_root/$ratio/${prefix}${dim[0]}x${dim[1]}/"
+    mv -v "$pic" "$wallpaper_root/$ratio/${prefix}${dim[0]}x${dim[1]}"
 done
 
