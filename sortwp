@@ -1,0 +1,23 @@
+#!/bin/bash
+
+wallpaper_root="$HOME/pic/wallpaper"
+
+ls | while read pic; do
+    dim=($(identify $pic | sed -n 's/.* \([0-9]\{3,4\}\)x\([0-9]\{3,4\}\) .*/\1 \2/p'))
+
+    case "$(echo "scale=3;${dim[0]} / ${dim[1]}" | bc)" in
+        "1.777") ratio="16:9" ;;
+        "1.600") ratio="16:10" ;;
+        "1.333") ratio="4:3" ;;
+        "1.250") ratio="5:4" ;;
+        *) ratio="other"
+           prefix="${dim[0]}x${dim[1]}_" ;;
+    esac
+
+    if [ ! -d "$wallpaper_root/$ratio/${dim[0]}x${dim[1]}" ]; then
+        mkdir -p $wallpaper_root/$ratio/${dim[0]}x${dim[1]}
+    fi
+
+    mv -v "$pic" "$wallpaper_root/$ratio/${prefix}${dim[0]}x${dim[1]}/"
+done
+
