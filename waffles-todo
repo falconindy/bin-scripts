@@ -1,0 +1,3 @@
+#!/bin/bash
+
+find /mnt/Gluttony/waffles -type f -links 2 -iname *.flac -exec dirname {} \; | uniq
