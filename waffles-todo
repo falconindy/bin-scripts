@@ -1,6 +1,6 @@
 #!/bin/bash
 
-saveifs=$IFS
+oifs=$IFS
 IFS=$'\n'
 waffles=($(cat <(find /mnt/Gluttony/waffles -type f -links 1 -iname \*.flac -exec dirname {} \; | sort -u)))
 
@@ -11,3 +11,4 @@ if [[ $# -eq 2 || $# -eq 1 ]]; then
 else
     for waffle in "${waffles[@]}"; do echo $waffle; done
 fi
+IFS=$ofs
