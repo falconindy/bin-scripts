@@ -4,11 +4,12 @@ oifs=$IFS
 IFS=$'\n'
 waffles=($(cat <(find /mnt/Gluttony/waffles -type f -links 1 -iname \*.flac -exec dirname {} \; | sort -u)))
 
-[[ -z $2 ]] && set $1 1
+[[ $# -eq 1 ]] && set $1 1
+[[ $# -eq 2 ]] && {
+    for waffle in "${waffles[@]:$1:$2}"; do
+        echo $waffle;
+    done;
+    exit 0;
+}
 
-if [[ $# -eq 2 || $# -eq 1 ]]; then
-    for waffle in "${waffles[@]:$1:$2}"; do echo $waffle; done
-else
-    for waffle in "${waffles[@]}"; do echo $waffle; done
-fi
-IFS=$ofs
+for waffle in "${waffles[@]}"; do echo $waffle; done
