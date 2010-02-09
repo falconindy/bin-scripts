@@ -2,7 +2,7 @@
 
 wallpaper_root="$HOME/pic/wallpaper"
 
-ls | while read pic; do
+find $wallpaper_root -maxdepth 1 -type f | while read pic; do
     dim=($(identify $pic | sed -n 's/.* \([0-9]\{3,4\}\)x\([0-9]\{3,4\}\) .*/\1 \2/p'))
 
     case "$(echo "scale=3;${dim[0]} / ${dim[1]}" | bc)" in
@@ -14,10 +14,11 @@ ls | while read pic; do
            prefix="${dim[0]}x${dim[1]}_" ;;
     esac
 
-    if [ ! -d "$wallpaper_root/$ratio/${dim[0]}x${dim[1]}" ]; then
-        mkdir -p "$wallpaper_root/$ratio/${dim[0]}x${dim[1]}"
+    if [[ -z $ratio && ! -d "$wallpaper_root/$ratio/${dim[0]}x${dim[1]}" ]]; then
+        mkdir -vp "$wallpaper_root/$ratio/${dim[0]}x${dim[1]}"
     fi
 
-    mv -v "$pic" "$wallpaper_root/$ratio/${prefix}${dim[0]}x${dim[1]}"
+    mv -v "$pic" "$wallpaper_root/$ratio/$prefix$(basename $pic)"
+    unset prefix
 done
 
