@@ -3,5 +3,5 @@
 conky -c $HOME/.conky/.conkyrc | while read line; do
     xsetroot -name "$line";
 done | while true; do
-	dwm 2> ~/.dwm.log
+    dwm 2> ~/.dwm.log
 done
