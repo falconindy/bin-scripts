@@ -1,5 +1,6 @@
 #!/bin/bash
 
+. /etc/rc.conf
 . /etc/rc.d/functions
 SQUASH_ROOT=/squashed
 
