@@ -1,8 +1,12 @@
 #!/bin/bash
+#
+# A command line utility that mimics xdg-open
+# Requires Bash 4.0+
+#
 
 [[ $# -ne 1 ]] && ( echo "Usage: $0 <file>" >&2; exit 1; )
 
-# Define handler in associative array
+# Define handlers per file extension
 declare -A handler
 handler[doc]=soffice
 handler[gif]=feh
@@ -13,12 +17,13 @@ handler[pdf]=apvlv
 handler[png]=feh
 handler[xls]=soffice
 
+# Fallback handler (should be a text editor)
 default=vim
 
 # Hack off extension
 ext=${1//*.}
 
-if [[ -z ${handler[$ext]} ]]; then
+if [[ -z $ext || -z ${handler[$ext]} ]]; then
     $default $1
 else
     ${handler[$ext]} $1
