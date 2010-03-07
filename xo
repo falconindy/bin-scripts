@@ -6,16 +6,27 @@
 
 [[ $# -ne 1 ]] && { echo "Usage: $0 <file>" >&2; exit 1; }
 
-# Define handlers per file extension
+# Define handlers per file extension in associative array
 declare -A handler
-handler[doc]=soffice
-handler[gif]=feh
-handler[jpeg]=feh
-handler[jpg]=feh
-handler[odt]=soffice
+
+doc=soffice
+handler[doc]=$doc
+handler[xls]=$doc
+handler[odt]=$doc
+
+image=feh
+handler[gif]=$image
+handler[jpeg]=$image
+handler[jpg]=$image
+handler[png]=$image
+
 handler[pdf]=apvlv
-handler[png]=feh
-handler[xls]=soffice
+
+video=mplayer
+handler[mkv]=$video
+handler[mpg]=$video
+handler[wmv]=$video
+handler[avi]=$video
 
 # Fallback handler (should be a text editor)
 default=vim
