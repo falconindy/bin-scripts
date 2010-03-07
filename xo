@@ -4,7 +4,7 @@
 # Requires Bash 4.0+
 #
 
-[[ $# -ne 1 ]] && { echo "Usage: $0 <file>" >&2; exit 1; }
+[[ $# -ne 1 ]] && { echo "Usage: ${0##*/} <file>" >&2; exit 1; }
 
 # Define handlers per file extension in associative array
 declare -A handler
