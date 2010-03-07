@@ -1,0 +1,25 @@
+#!/bin/bash
+
+[[ $# -ne 1 ]] && ( echo "Usage: $0 <file>" >&2; exit 1; )
+
+# Define handler in associative array
+declare -A handler
+handler[doc]=soffice
+handler[gif]=feh
+handler[jpeg]=feh
+handler[jpg]=feh
+handler[odt]=soffice
+handler[pdf]=apvlv
+handler[png]=feh
+handler[xls]=soffice
+
+default=vim
+
+# Hack off extension
+ext=${1//*.}
+
+if [[ -z ${handler[$ext]} ]]; then
+    $default $1
+else
+    ${handler[$ext]} $1
+fi
