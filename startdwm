@@ -1,7 +1,7 @@
 #!/bin/bash
 
-conky -c $HOME/.conky/.conkyrc | while read line; do
-    xsetroot -name "$line";
+conky -c $HOME/.conky/.conkyrc | while read conkyout; do
+    xsetroot -name "$conkyout";
 done | while true; do
     dwm 2> ~/.dwm.log
 done
