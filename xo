@@ -7,40 +7,64 @@
 # Arg check
 [[ $# -ne 1 ]] && { echo "Usage: ${0##*/} <file>" >&2; exit 1; }
 
-# Define handlers per file extension in associative array
+# Declare an associative array to keep track of our file types.
+# Index elements can be a full MIME type (e.g. image/png), just
+# the major MIME type (e.g. image) or a file extension (png).
 declare -A handler
 
+# To keep things clean, general programs should be declared for
+# groups of filetypes resulting in the same program being used
+# when a major MIME type won't correctly identify all filetypes.
+# openoffice.org documents are an example of this.
 doc=soffice
 handler[doc]=$doc
 handler[xls]=$doc
 handler[odb]=$doc
 handler[ods]=$doc
-handler[odt]=$doc
+handler[application/vnd.oasis.opendocument.text]=$doc
 
 image=feh
-handler[gif]=$image
-handler[jpeg]=$image
-handler[jpg]=$image
-handler[png]=$image
+handler[image]=$image
+#handler[image/png]=$image
+#handler[image/gif]=$image
+#handler[image/jpeg]=$image
+#handler[image/jpg]=$image
+#handler[image/png]=$image
 
-handler[pdf]=apvlv
+handler[application/pdf]=apvlv
 
 video=mplayer
-handler[mkv]=$video
-handler[mpg]=$video
-handler[wmv]=$video
-handler[avi]=$video
+handler[video]=$video
+#handler[mkv]=$video
+#handler[mpg]=$video
+#handler[wmv]=$video
+#handler[avi]=$video
 
-# Fallback handler (should be a text editor)
-default=vim
+# Fallback handler
+default=${EDITOR:-vi}
 
-# Hack off extension
+# Determine the MIME type via 'file' and assign it to an array
+# mimetype[0] = major (e.g. image)
+# mimetype[1] = minor (e.g. png)
+mimetype=($(file -bi "$*" | sed -n 's|\([a-zA-Z\-\.]*\)/\([a-zA-Z\-\.]*\);.*|\1 \2|p'))
+
+# Determine the extension as a fallback method
 ext=${1//*.}
 
-# Check for non-zero length of $ext and that we found a valid handler
-if [[ -z $ext || -z ${handler[$ext]} ]]; then
-    $default $1
-else
+# Try to open by exact MIME type
+if [[ -n ${handler[${mimetype[0]}/${mimetype[1]}]} ]]; then
+    ${handler[${mimetype[0]}/${mimetype[1]}]} "$*"
+
+# Try to open by major MIME type
+elif [[ -n ${handler[${mimetype[0]}]} ]]; then
+    ${handler[${mimetype[0]}]} "$*"
+
+# Try to open by extension
+elif [[ -n ${handler[$ext]} ]]; then
     ${handler[$ext]} "$*"
+
+# Well, I'm out of ideas. Use the $default.
+else
+    $default "$*"
 fi
 
