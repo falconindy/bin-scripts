@@ -4,6 +4,7 @@
 # Requires Bash 4.0+
 #
 
+# Arg check
 [[ $# -ne 1 ]] && { echo "Usage: ${0##*/} <file>" >&2; exit 1; }
 
 # Define handlers per file extension in associative array
@@ -12,6 +13,8 @@ declare -A handler
 doc=soffice
 handler[doc]=$doc
 handler[xls]=$doc
+handler[odb]=$doc
+handler[ods]=$doc
 handler[odt]=$doc
 
 image=feh
@@ -34,8 +37,10 @@ default=vim
 # Hack off extension
 ext=${1//*.}
 
+# Check for non-zero length of $ext and that we found a valid handler
 if [[ -z $ext || -z ${handler[$ext]} ]]; then
     $default $1
 else
-    ${handler[$ext]} $1
+    ${handler[$ext]} "$*"
 fi
+
