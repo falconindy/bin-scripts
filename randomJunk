@@ -1,3 +1,8 @@
 #!/bin/bash
 
-cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 4
+if [[ $# -ne 2 ]]; then
+    echo "Usage: ${0##*/} <string length> <output quantity>" >&2
+    exit 1
+fi
+
+cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w $1 | head -n $2
