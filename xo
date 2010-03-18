@@ -46,7 +46,7 @@ default=${EDITOR:-vi}
 # Determine the MIME type via 'file' and assign it to an array
 # mimetype[0] = major (e.g. image)
 # mimetype[1] = minor (e.g. png)
-mimetype=($(file -bi "$*" | sed -n 's|\([a-zA-Z\-\.]*\)/\([a-zA-Z\-\.]*\);.*|\1 \2|p'))
+mimetype=($(file -bi "$*" | sed -n 's|\(.*\)/\(.*\);.*|\1 \2|p'))
 
 # Determine the extension as a fallback method
 ext=${1//*.}
