@@ -1,0 +1,14 @@
+#!/bin/bash
+
+exec >> output.html
+
+echo "<table>"
+while read line; do
+    printf "\t<tr>\n"
+    IFS=$','
+    for item in $line; do
+        printf "\t\t<td>%s</td>\n" $item
+    done
+    printf "\t</tr>\n"
+done < table.csv
+echo "</table>" 
