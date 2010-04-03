@@ -1,0 +1,14 @@
+#!/bin/bash
+
+[[ ! -d "${1}1" ]] && {
+    mkdir -vp "${1}1";
+    set "$1" $[ $2 - 1 ];
+}
+
+base_file=$(echo "$1" | awk -F\/ '{print $NF}')
+max=$(ls -d ${1}[[:digit:]]* | sed -e 's/.*\/[A-Za-z]*//g' -e 's/[A-Za-z]*//' | sort -n | tail -1)
+next=$[ $max + 1 ]
+
+for i in $(seq $next 1 $[ $max + $2 ]); do
+    mkdir -vp "$(dirname $1)/${base_file}${i}"
+done
