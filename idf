@@ -1,2 +1,0 @@
-#!/bin/bash
-paste <(echo "Type";/bin/mount | sed -n '/^\/dev/s/.*type \([a-z0-9]*\) .*/\1/p') <(/bin/df -h | grep -E "^\/dev|^Filesystem")
