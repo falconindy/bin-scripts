@@ -1,5 +1,0 @@
-#!/bin/bash
-
-while read -r -n1 -d ''; do
-  echo -n "$REPLY "
-done | xclip
