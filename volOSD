@@ -1,50 +1,38 @@
 #!/bin/bash
 
-usage="usage: $0 -c {up|down|mute} [-i increment] [-m mixer]"
+usage="usage: ${0##*/} -c <+|-> <-i increment> <-m mixer>"
 command=
 increment=5%
 mixer=PCM
 
-while getopts i:h o
-do case "$o" in
+while getopts i:h o; do
+  case "$o" in
     i) increment=$OPTARG;;
     h) echo "$usage"; exit 0;;
     ?) echo "$usage"; exit 0;;
-esac
+  esac
 done
 
 shift $(($OPTIND - 1))
 command=$1
 
-if [ "$command" = "" ]; then
-    echo "usage: $0 {up|down} [increment]"
+if [[ ! $command =~ [+-] ]]; then
+    echo $usage
     exit 0;
 fi
 
-display_volume=0
-
-if [ "$command" = "up" ]; then
-    display_volume=$(amixer set $mixer $increment+ unmute | grep -m 1 "%]" | cut -d "[" -f2 | cut -d "%" -f1)
-fi
-
-if [ "$command" = "down" ]; then
-    display_volume=$(amixer set $mixer $increment- unmute | grep -m 1 "%]" | cut -d "[" -f2 | cut -d "%" -f1)
-fi
+display_volume=$(amixer set $mixer $increment$command unmute | awk '/^[\ ]*Front Left/{print $4}')
 
 icon_name="notification-audio-volume-"
 
-if [[ "$display_volume" = "0" ]]; then
-    icon_name+="off"
+if [[ $display_volume -gt 67 ]]; then
+  icon_name+="high"
+elif [[ $display_volume -gt 33 ]]; then 
+  icon_name+="medium"
+elif [[ $display_volume -gt 0 ]]; then 
+  icon_name+="low"
 else
-  if [[ "$display_volume" -lt "33" ]]; then
-    icon_name+="low"
-  else
-    if [ "$display_volume" -lt "67" ]; then
-      icon_name+="medium"
-    else
-      icon_name+="high"
-    fi
-  fi
+  icon_name+="muted"
 fi
 
 notify-send " " -i $icon_name -h int:value:$display_volume -h string:synchronous:volume -t 1000
