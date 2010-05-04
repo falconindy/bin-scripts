@@ -4,9 +4,10 @@
 
 clockset() {
   echo "Setting hwclock to localtime from time.nist.gov..."
-  hwclock --set --date="$(cat < /dev/tcp/time.nist.gov/13 | awk '{print $2,$3}') UTC" || return 1
+  hwclock --set --date="$(awk '{if (NF > 1) print $2,$3 " UTC"}' < /dev/tcp/time.nist.gov/13)" || return 1
   echo "Sync'ing hwclock to system..."
   hwclock -s
+  echo "The time is now:" $(hwclock)
   return 0
 }
 
