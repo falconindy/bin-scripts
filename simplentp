@@ -1,11 +1,13 @@
 #!/bin/bash
 
-if [[ $UID -ne 0 ]]; then
-  echo "Error: Must be root!" >&2
-  exit 1
-fi
+[[ $UID -ne 0 ]] && { echo "Error: Must be root!" >&2; exit 1; }
 
-echo "Setting hwclock to localtime from time.nist.gov..."
-hwclock --set --date="$(cat < /dev/tcp/time.nist.gov/13 | awk '{print $2,$3}') UTC"
-echo "Sync'ing hwclock to system..."
-hwclock -s
+clockset() {
+  echo "Setting hwclock to localtime from time.nist.gov..."
+  hwclock --set --date="$(cat < /dev/tcp/time.nist.gov/13 | awk '{print $2,$3}') UTC" || return 1
+  echo "Sync'ing hwclock to system..."
+  hwclock -s
+  return 0
+}
+
+clockset
