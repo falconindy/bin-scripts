@@ -22,6 +22,7 @@ handler[xls]=$doc
 handler[odb]=$doc
 handler[ods]=$doc
 handler[application/vnd.oasis.opendocument.text]=$doc
+handler[text/rtf]=$doc
 
 image=feh
 handler[image]=$image
