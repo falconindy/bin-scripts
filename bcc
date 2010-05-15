@@ -10,6 +10,6 @@ return 0;
 }
 EOF
 
-gcc -std=c99 -pipe -O2 -Wall /tmp/tmp$$.c -o /tmp/tmp$$ && /tmp/tmp$$ && rm /tmp/tmp$$
+gcc -std=c99 -pipe -O2 -Wall -pedantic /tmp/tmp$$.c -o /tmp/tmp$$ && { /tmp/tmp$$; rm /tmp/tmp$$; }
 rm /tmp/tmp$$.c
 
