@@ -5,16 +5,22 @@ CFLAGS="-O2"
 SRC=/tmp/tmp$$.c
 OUT=/tmp/tmp$$
 
+trap_exit() {
+  [[ -f "$OUT" ]] && rm -f "$OUT"
+  [[ -f "$SRC" ]] && rm -f "$SRC"
+}
+
+trap 'trap_exit' 0 TERM HUP QUIT INT ERR
+
 cat > "$SRC" << EOF
 #include <stdio.h>
 #include <stdlib.h>
 
 int main(void) {
-$@
-return 0;
+  $@
+  return 0;
 }
 EOF
 
-$CC $CFLAGS $SRC -o "$OUT" && { "$OUT"; rm "$OUT"; }
-rm "$SRC"
+$CC $CFLAGS $SRC -o "$OUT" && "$OUT"
 
