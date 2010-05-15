@@ -1,9 +1,31 @@
 #!/bin/bash
 
-REPOPATH=$HOME
+REPOHOME=$HOME
+
+msg() {
+  local mesg=$1; shift
+  printf "\033[1;32m==>\033[1;0m\033[1;1m ${mesg}\033[1;0m\n" "$@" >&2
+}
+
+if [[ $# -gt 0 ]]; then
+  msg "Command to be executed: $*"
+  read -N1 -p "  Are you sure you want to do this? [y/N] " reply
+  echo
+
+  if [[ ! "$reply" =~ [Yy] ]]; then
+    exit 1;
+  fi
+fi
 
 while read repo; do
-  cd ${repo%.git}
-  [[ $(git status -s | grep -v "^??" | wc -l) -gt 0 ]] && echo "${repo%.git}"
-done < <(find $REPOPATH -type d -name '.git')
+  reporoot=${repo%.git}
+  cd "$reporoot"
+  if [[ $# -eq 0 ]]; then
+    [[ $(git status -s | grep -v "^??" | wc -l) -gt 0 ]] && echo "$reporoot"
+  else
+    msg "In '$reporoot'"
+    "$@"
+    echo
+  fi
+done < <(find $REPOHOME -type d -name '.git')
 
