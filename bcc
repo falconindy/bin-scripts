@@ -1,6 +1,11 @@
 #!/bin/bash
 
-cat > /tmp/tmp$$.c << EOF
+CC="gcc -std=c99 -pipe -Wall -pedantic"
+CFLAGS="-O2"
+SRC=/tmp/tmp$$.c
+OUT=/tmp/tmp$$
+
+cat > "$SRC" << EOF
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -10,6 +15,6 @@ return 0;
 }
 EOF
 
-gcc -std=c99 -pipe -O2 -Wall -pedantic /tmp/tmp$$.c -o /tmp/tmp$$ && { /tmp/tmp$$; rm /tmp/tmp$$; }
-rm /tmp/tmp$$.c
+$CC $CFLAGS $SRC -o "$OUT" && { "$OUT"; rm "$OUT"; }
+rm "$SRC"
 
