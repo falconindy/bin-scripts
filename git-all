@@ -24,7 +24,7 @@ while read repo; do
     [[ $(git status -s | grep -v "^??" | wc -l) -gt 0 ]] && echo "$reporoot"
   else
     msg "In '$reporoot'"
-    "$@"
+    "$@" || exit 1
     echo
   fi
 done < <(find $REPOHOME -type d -name '.git')
