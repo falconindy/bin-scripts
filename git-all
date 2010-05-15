@@ -3,7 +3,7 @@
 REPOPATH=$HOME
 
 while read repo; do
-  cd ${repo}/..
-  [[ $(git status -s | grep -v "^??" | wc -l) -gt 0 ]] && echo "${repo//.git}"
+  cd ${repo%.git}
+  [[ $(git status -s | grep -v "^??" | wc -l) -gt 0 ]] && echo "${repo%.git}"
 done < <(find $REPOPATH -type d -name '.git')
 
