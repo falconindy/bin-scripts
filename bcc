@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 CC="gcc -std=c99 -pipe -Wall -pedantic"
 CFLAGS="-O2"
@@ -6,11 +6,11 @@ SRC=/tmp/tmp$$.c
 OUT=/tmp/tmp$$
 
 trap_exit() {
-  [[ -f "$OUT" ]] && rm -f "$OUT"
-  [[ -f "$SRC" ]] && rm -f "$SRC"
+  [ -f "$OUT" ] && rm -f "$OUT"
+  [ -f "$SRC" ] && rm -f "$SRC"
 }
 
-trap 'trap_exit' 0 TERM HUP QUIT INT ERR
+trap 'trap_exit' 0 TERM HUP QUIT INT
 
 cat > "$SRC" << EOF
 #include <stdio.h>
