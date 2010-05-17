@@ -15,6 +15,7 @@ trap 'trap_exit' 0 TERM HUP QUIT INT
 cat > "$SRC" << EOF
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int main(void) {
   $@
