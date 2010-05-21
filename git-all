@@ -1,5 +1,14 @@
 #!/bin/bash
 
+[[ $1 = "-h" ]] && {
+  echo "Usage: ${0##*/} [-f] [command]";
+  echo;
+  echo "     -f      suppress prompting before a custom command is run";
+  echo;
+  echo "repos with uncommitted changes will be reported if no command is provided";
+  exit 1;
+}
+
 REPOHOME=$HOME
 
 msg() {
@@ -8,12 +17,14 @@ msg() {
 }
 
 if [[ $# -gt 0 ]]; then
-  msg "Command to be executed: $*"
-  read -N1 -p "  Are you sure you want to do this? [y/N] " reply
-  echo
+  if [[ $1 = "-f" ]]; then
+    shift
+  else
+    msg "Command to be executed: $*"
+    read -N1 -p "  Are you sure you want to do this? [y/N] " reply
+    echo
 
-  if [[ ! "$reply" =~ [Yy] ]]; then
-    exit 1;
+    [[ ! "$reply" =~ [Yy] ]] && exit 1
   fi
 fi
 
@@ -23,9 +34,9 @@ while read repo; do
   if [[ $# -eq 0 ]]; then
     [[ $(git status -s | grep -v "^??" | wc -l) -gt 0 ]] && echo "$reporoot"
   else
-    msg "In '$reporoot'"
-    "$@" || exit 1
-    echo
+    msg "In '$reporoot'";
+    "$@" || exit 1;
+    echo;
   fi
 done < <(find $REPOHOME -type d -name '.git')
 
