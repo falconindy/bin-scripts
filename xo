@@ -17,32 +17,20 @@ declare -A handler
 # when a major MIME type won't correctly identify all filetypes.
 # openoffice.org documents are an example of this.
 doc=soffice
-handler[doc]=$doc
-handler[xls]=$doc
-handler[odb]=$doc
-handler[ods]=$doc
-handler[application/vnd.oasis.opendocument.text]=$doc
-handler[text/rtf]=$doc
-
 image=feh
-handler[image]=$image
-#handler[image/png]=$image
-#handler[image/gif]=$image
-#handler[image/jpeg]=$image
-#handler[image/jpg]=$image
-#handler[image/png]=$image
+video=mplayer
+default=${EDITOR:-vi} # Fallback -- should be a text editor
 
 handler[application/pdf]=apvlv
-
-video=mplayer
+handler[application/vnd.oasis.opendocument.text]=$doc
+handler[doc]=$doc
+handler[image]=$image
+handler[odb]=$doc
+handler[odf]=$doc
+handler[ods]=$doc
+handler[text/rtf]=$doc
 handler[video]=$video
-#handler[mkv]=$video
-#handler[mpg]=$video
-#handler[wmv]=$video
-#handler[avi]=$video
-
-# Fallback handler
-default=${EDITOR:-vi}
+handler[xls]=$doc
 
 # Determine the MIME type via 'file' and assign it to an array
 # mimetype[0] = major (e.g. image)
