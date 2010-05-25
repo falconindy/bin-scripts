@@ -9,7 +9,7 @@
   exit 1;
 }
 
-REPOHOME=$HOME
+repohome=$HOME
 
 msg() {
   local mesg=$1; shift
@@ -29,14 +29,14 @@ if [[ $# -gt 0 ]]; then
 fi
 
 while read repo; do
-  reporoot=${repo%.git}
-  cd "$reporoot"
+  repo=${repo%.git}
+  cd "$repo"
   if [[ $# -eq 0 ]]; then
-    [[ $(git status -s | grep -v "^??" | wc -l) -gt 0 ]] && echo "$reporoot"
+    [[ $(git status -s | grep -v "^??" | wc -l) -gt 0 ]] && echo "$repo"
   else
-    msg "In '$reporoot'";
+    msg "In '$repo'";
     "$@" || exit 1;
     echo;
   fi
-done < <(find $REPOHOME -type d -name '.git')
+done < <(find "$repohome" -type d -name '.git')
 
