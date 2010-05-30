@@ -10,6 +10,8 @@
 }
 
 repohome=$HOME
+fail=0
+success=0
 
 msg() {
   local mesg=$1; shift
@@ -35,8 +37,13 @@ while read repo; do
     [[ $(git status -s | grep -v "^??" | wc -l) -gt 0 ]] && echo "$repo"
   else
     msg "In '$repo'";
-    "$@" || exit 1;
+    "$@" && (( success++ )) || (( fail++ ))
     echo;
   fi
 done < <(find "$repohome" -type d -name '.git')
 
+if [[ $# -ne 0 ]]; then
+  echo "Job summary for: $@"
+  echo "Successes : $success"
+  echo "Errors    : $fail"
+fi
