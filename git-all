@@ -37,11 +37,11 @@ msg2() {
 }
 
 repopass() {
-  printf "\033[0;37m %-60s \033[1;0m\033[0;34m[\033[1;37mPASS\033[0;34m]\033[0m\n" "$1"
+  printf "\033[0;36m %-60s \033[1;0m\033[0;34m[\033[1;37mPASS\033[0;34m]\033[0m\n" "$1"
 }
 
 repofail() {
-  printf "\033[0;37m %-60s \033[1;0m\033[0;34m[\033[1;31mFAIL\033[0;34m]\033[0m\n" "$1"
+  printf "\033[0;36m %-60s \033[1;0m\033[0;34m[\033[1;31mFAIL\033[0;34m]\033[0m\n" "$1"
 }
 
 verify_execute() {
@@ -102,8 +102,9 @@ job_summary() {
   else
     for repo in "${fail[@]}"; do
       repofail "$repo"
-      sed 's/^/   /' <<< "${output[$repo]}"
+      sed 's/^/   /' <<< "${output[$repo]}" && echo
     done
+  echo
   fi
   echo
 
