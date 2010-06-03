@@ -89,7 +89,7 @@ stat_repos() {
     [[ -n $(git status -s | grep -v "^??") ]] && echo "$repo"
   done
 
-  exit
+  exit 0
 }
 
 job_summary() {
