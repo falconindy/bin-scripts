@@ -1,20 +1,34 @@
 #!/bin/bash
 
-[[ $1 = "-h" ]] && {
-  echo "Usage: ${0##*/} [-f] [command]";
-  echo;
-  echo "     -f      suppress prompting before a custom command is run";
-  echo "     -v      be verbose. show output for each repo";
-  echo;
-  echo "repos with uncommitted changes will be reported if no command is provided";
-  exit 1;
-}
+# Alter this
+REPOHOME=${REPOHOME:-$HOME}
 
-verbose=0
-repohome=$HOME
+
+###############################################################################
+# Do not modify below this line
+
+FORCE=0
+VERBOSE=0
 count=0
 declare -a fail
 declare -a pass
+
+usage() {
+  echo "Usage: ${0##*/} [options] [command]"
+  echo
+  echo "   -S, --stat       Show repos which have uncommitted changes. If this"
+  echo "                     option is specified, all other options are ignored."
+  echo
+  echo "   -f, --force      suppress prompting before a custom command is run"
+  echo "   -v, --verbose    be verbose. show output for each repo"
+  echo "   -h, --help       print this help message"
+  echo
+  echo " Actions will be performed on \$REPOHOME, which defaults to \$HOME"
+  echo " if not specified."
+  echo
+
+  exit 1
+}
 
 msg() {
   local mesg=$1; shift
@@ -35,11 +49,11 @@ repofail() {
 }
 
 # caught a custom arg, verify before proceeding
-if [[ $# -gt 0 ]]; then
+verify_execute() {
   if [[ $1 = "-f" ]]; then
     shift
   elif [[ $1 = "-v" ]]; then
-    verbose=1
+    VERBOSE=1
     shift
   else
     msg "Command to be executed: $*"
@@ -48,38 +62,53 @@ if [[ $# -gt 0 ]]; then
 
     [[ ! "$reply" =~ [Yy] ]] && exit 1
   fi
-fi
+}
 
 # validate the command we were given
-type -P $1 &> /dev/null || {
-  echo "Invalid command: '$1'";
-  exit 1;
+validate_command() {
+  type -P $1 &> /dev/null || {
+    echo "Invalid command: '$1'";
+    exit 1;
+  }
 }
 
 # do it
-while read repo; do
-  repo=${repo%.git}
-  cd "$repo"
-  if [[ $# -eq 0 ]]; then
-    [[ -n $(git status -s | grep -v "^??") ]] && echo "$repo"
-  else
+do_all_action() {
+  while read repo; do
+    repo=${repo%.git}
+    cd "$repo"
+
     (( count++ ))
-    { (( verbose )) && {
+    if (( VERBOSE )); then
         msg2 "In '$repo'";
         "$@";
-      } || "$@" >/dev/null;
-    } && pass=(${pass[@]} "$repo") || errors=(${errors[@]} "$repo")
-  fi
-done < <(find "$repohome" -type d -name '.git')
+    else 
+      "$@" &>/dev/null
+    fi
+    if [[ $? -eq 0 ]]; then
+      pass=(${pass[@]} "$repo") 
+    else
+      fail=(${fail[@]} "$repo")
+    fi
+  done < <(find "$REPOHOME" -type d -name '.git')
+}
 
-# print job summary
-if [[ $# -ne 0 ]]; then
-  msg "Action Summary for $count repos:"
+stat_repos() {
+  while read repo; do
+    repo="${repo%.git}"
+    cd "$repo"
+    [[ -n $(git status -s | grep -v "^??") ]] && echo "$repo"
+  done < <(find "$REPOHOME" -type d -name '.git') 
+
+  exit
+}
+
+job_summary() {
+  msg "Action Summary For $count Repos: $*"
 
   if [[ ${#fail[@]} -eq 0 ]]; then
     msg2 "No errors were reported"
   else
-    echo "Errors occurred in the following repos:"
     for repo in "${fail[@]}"; do
       repofail "$repo"
     done
@@ -90,5 +119,32 @@ if [[ $# -ne 0 ]]; then
     repopass "$repo"
   done
   echo
+}
+
+if [[ -z $1 ]]; then
+  usage
 fi
+
+while (( $# != 0 )); do
+  case $1 in
+    -S|--stat)
+      stat_repos
+      ;;
+    -h|--help)
+      usage
+      ;;
+    -v|--verbose)
+      VERBOSE=1
+      ;;
+    -f|--force)
+      FORCE=1
+      ;;
+    *) break ;;
+  esac
+  shift
+done
+
+[[ $# -ne 0 ]] && ! (( FORCE )) && verify_execute "$*" && validate_command "$1"
+do_all_action "$@"
+job_summary "$@"
 
