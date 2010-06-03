@@ -25,7 +25,7 @@ usage() {
   echo
 
   exit 1
-}
+} >&2
 
 die() {
   local mesg=$1; shift
@@ -128,7 +128,7 @@ while getopts :Shfv flag; do
     \?) die "invalid option -- '$OPTARG'"
       usage
       ;;
-  esac
+  esac >&2
 done
 while (( --OPTIND )); do shift; done
 
