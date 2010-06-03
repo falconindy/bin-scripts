@@ -10,7 +10,6 @@ declare -a pass
 declare -A output
 
 usage() {
-  echo
   echo "Usage: ${0##*/} [options] [command]"
   echo
   echo "   -S    Show repos which have uncommitted changes. If this"
@@ -130,7 +129,8 @@ while getopts :Shfv flag; do
       ;;
   esac >&2
 done
-while (( --OPTIND )); do shift; done
+
+shift $(( OPTIND-1 ))
 
 # did user only provide flags?
 [[ -z $1 ]] && usage
