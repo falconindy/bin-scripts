@@ -1,17 +1,13 @@
 #!/bin/bash
 
-# Alter this
 REPOHOME=${REPOHOME:-$HOME}
-
-
-###############################################################################
-# Do not modify below this line
-
 FORCE=0
 VERBOSE=0
+
 count=0
 declare -a fail
 declare -a pass
+declare -A output
 
 usage() {
   echo "Usage: ${0##*/} [options] [command]"
@@ -32,12 +28,12 @@ usage() {
 
 msg() {
   local mesg=$1; shift
-  printf "\033[1;32m==>\033[1;0m\033[1;1m ${mesg}\033[1;0m\n" "$@" >&2
+  printf " \033[1;32m==>\033[1;0m\033[1;1m ${mesg}\033[1;0m\n" "$@" >&2
 }
 
 msg2() {
   local mesg=$1; shift
-  printf "\033[1;34m  ->\033[1;0m\033[1;1m ${mesg}\033[1;0m\n" "$@" >&2
+  printf " \033[1;34m  ->\033[1;0m\033[1;1m ${mesg}\033[1;0m\n" "$@" >&2
 }
 
 repopass() {
@@ -48,7 +44,6 @@ repofail() {
   printf "\033[0;37m %-60s \033[1;0m\033[0;34m[\033[1;31mFAIL\033[0;34m]\033[0m\n" "$1"
 }
 
-# caught a custom arg, verify before proceeding
 verify_execute() {
   if [[ $1 = "-f" ]]; then
     shift
@@ -57,14 +52,13 @@ verify_execute() {
     shift
   else
     msg "Command to be executed: $*"
-    read -N1 -p "  Are you sure you want to do this? [y/N] " reply
+    read -N1 -p " Are you sure you want to do this? [y/N] " reply
     echo;echo;
 
     [[ ! "$reply" =~ [Yy] ]] && exit 1
   fi
 }
 
-# validate the command we were given
 validate_command() {
   type -P $1 &> /dev/null || {
     echo "Invalid command: '$1'";
@@ -72,30 +66,27 @@ validate_command() {
   }
 }
 
-# do it
 do_all_action() {
-  while read repo; do
-    repo=${repo%.git}
+  IFS=$'\n' read -r -d $'\0' -a repos < <(find "$REPOHOME" -type d -name '.git')
+
+  for repo in "${repos[@]}"; do
+    (( count++ ))
+    repo=${repo%/.git}
     cd "$repo"
 
-    (( count++ ))
-    if (( VERBOSE )); then
+    { if (( VERBOSE )); then
         msg2 "In '$repo'";
-        "$@";
-    else 
-      "$@" &>/dev/null
-    fi
-    if [[ $? -eq 0 ]]; then
-      pass=(${pass[@]} "$repo") 
-    else
-      fail=(${fail[@]} "$repo")
-    fi
-  done < <(find "$REPOHOME" -type d -name '.git')
+        output[$repo]=$("$@" 2>&1);
+      else
+        { output[$repo]=$("$@" 2>&1); } > /dev/null
+    fi; } && pass=(${pass[@]} "$repo") || fail=(${fail[@]} "$repo")
+
+  done
 }
 
 stat_repos() {
   while read repo; do
-    repo="${repo%.git}"
+    repo="${repo%/.git}"
     cd "$repo"
     [[ -n $(git status -s | grep -v "^??") ]] && echo "$repo"
   done < <(find "$REPOHOME" -type d -name '.git') 
@@ -104,13 +95,14 @@ stat_repos() {
 }
 
 job_summary() {
-  msg "Action Summary For $count Repos: $*"
+  msg "Job Summary For $count Repos: $*"
 
   if [[ ${#fail[@]} -eq 0 ]]; then
     msg2 "No errors were reported"
   else
     for repo in "${fail[@]}"; do
       repofail "$repo"
+      sed 's/^/   /' <<< "${output[$repo]}"
     done
   fi
   echo
@@ -121,9 +113,7 @@ job_summary() {
   echo
 }
 
-if [[ -z $1 ]]; then
-  usage
-fi
+[[ -z $1 ]] && usage
 
 while (( $# != 0 )); do
   case $1 in
@@ -143,6 +133,8 @@ while (( $# != 0 )); do
   esac
   shift
 done
+
+[[ -z $1 ]] && usage
 
 [[ $# -ne 0 ]] && ! (( FORCE )) && verify_execute "$*" && validate_command "$1"
 do_all_action "$@"
