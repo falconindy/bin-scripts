@@ -13,12 +13,12 @@ usage() {
   echo
   echo "Usage: ${0##*/} [options] [command]"
   echo
-  echo "   -S, --stat       Show repos which have uncommitted changes. If this"
-  echo "                     option is specified, all other options are ignored."
+  echo "   -S    Show repos which have uncommitted changes. If this"
+  echo "          option is specified, all other options are ignored."
   echo
-  echo "   -f, --force      suppress prompting before a custom command is run"
-  echo "   -h, --help       print this help message"
-  echo "   -v, --verbose    print error output in job summary for failed jobs"
+  echo "   -f    suppress prompting before a custom command is run"
+  echo "   -h    print this help message"
+  echo "   -v    print error output in job summary for failed jobs"
   echo
   echo " Actions will be performed on \$REPOHOME, which defaults to \$HOME"
   echo " if not specified."
@@ -115,29 +115,24 @@ job_summary() {
 
 [[ -z $1 ]] && usage
 
-while (( $# != 0 )); do
-  case $1 in
-    -*S|--stat)
-      stat_repos
+while getopts :Shfv flag; do
+  case $flag in
+    S) stat_repos
       ;;
-    -*h|--help)
+    h) usage
+      ;;
+    f) FORCE=1
+      ;;
+    v) VERBOSE=1
+      ;;
+    \?) die "invalid option -- '$OPTARG'"
       usage
       ;;
-    -*f|--force)
-      FORCE=1
-      ;;
-    -*v|--verbose)
-      VERBOSE=1
-      ;;
-    (-*) usage
-      ;;
-    *) break;
-      ;;
   esac
-  shift
 done
+while (( --OPTIND )); do shift; done
 
-# shifted off all our args, no cmd given
+# did user only provide flags?
 [[ -z $1 ]] && usage
 
 # meat
