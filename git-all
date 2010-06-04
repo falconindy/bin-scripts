@@ -70,7 +70,7 @@ do_all_action() {
 
   for repo in "${repos[@]}"; do
     (( count++ ))
-    repo=${repo%/.git}
+    local repo=${repo%/.git}
     cd "$repo"
 
     output[$repo]=$("$@" 2>&1) &&
@@ -84,7 +84,7 @@ stat_repos() {
   IFS=$'\n' read -r -d $'\0' -a repos < <(find "$REPOHOME" -type d -name '.git')
 
   for repo in "${repos[@]}"; do
-    repo="${repo%/.git}"
+    local repo="${repo%/.git}"
     cd "$repo"
     [[ -n $(git status -s | grep -v "^??") ]] && echo "$repo"
   done
