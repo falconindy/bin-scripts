@@ -1,27 +1,19 @@
 #!/bin/bash
 
-usage="usage: ${0##*/} -c <+|-> <-i increment> <-m mixer>"
-command=
-increment=5%
-mixer=PCM
+#
+# This is intended to be a hook from a WM to notify-osd. There's not much sense
+# in calling this directly. Relies on ossmix.
+#
+# Example dwm usage:
+# static const char *volup[]     = { "volOSD",   "pcm2",  "+5" };
+# static const char *voldown[]   = { "volOSD",   "pcm2",  "-5" };
+#
 
-while getopts i:h o; do
-  case "$o" in
-    i) increment=$OPTARG;;
-    h) echo "$usage"; exit 0;;
-    ?) echo "$usage"; exit 0;;
-  esac
-done
+mixer=$1
+increment=$2
 
-shift $(($OPTIND - 1))
-command=$1
-
-if [[ ! $command =~ [+-] ]]; then
-    echo $usage
-    exit 0;
-fi
-
-display_volume=$(amixer set $mixer $increment$command unmute | awk '/^[\ ]*Front Left/{print $4}')
+display_volume=$(sed -n 's/.*:\([0-9\.]*\)$/\1/p' <(ossmix $mixer -- $increment))
+display_volume=${display_volume%%.*} # truncate decimal if any
 
 icon_name="notification-audio-volume-"
 
