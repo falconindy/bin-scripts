@@ -5,9 +5,13 @@ for package in $(pacman -Qqm); do
 
   for p in ${pkg[@]:1}; do
     [[ $p == "None" ]] && continue
+
     pacver=($(awk -F':' '/^Version/{ gsub(/^[ \t]+/, "", $2); print $2 }' <(pacman -Si ${p%=*} 2>/dev/null)))
     [[ -z ${pacver[0]} ]] && continue
-    #echo "$p has pacman ver $pacver"
+
+    # If they only differ in the build version, skip it
+    [[ ${pacver[0]%-*} == ${pkg[0]%-*} ]] && continue
+
     if [[ $(vercmp ${pacver[0]} ${pkg[0]}) -gt 0 ]]; then
       echo -e "${p%=*} \033[1;31m${pkg[0]}\033[1;0m -> \033[1;32m${pacver[0]}\033[1;0m"
     fi
