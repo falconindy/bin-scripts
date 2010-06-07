@@ -8,18 +8,18 @@ for package in $(pacman -Qqm); do
   # for each provide found...
   for provide in ${pkg[@]:1}; do
     [[ $provide == "None" ]] && continue # provides array is empty
+    provide=${provide%=*}
 
     # slice the dep on the versioning if it exists, and search for it in pacman
-    # use an array to avoid issues when the package is in testing and elsewhere
-    pacver=($(awk -F':' '/^Version/{ gsub(/^[ \t]+/, "", $2); print $2 }' <(pacman -Si ${provide%=*} 2>/dev/null)))
-    [[ -z ${pacver[0]} ]] && continue
+    pacver=$(awk -F':' '/^Version/{ gsub(/^[ \t]+/, "", $2); print $2; exit }' <(pacman -Si ${provide} 2>/dev/null))
+    [[ -z ${pacver} ]] && continue
 
     # if they only differ in the build version, skip it
-    [[ ${pacver[0]%-*} == ${pkg[0]%-*} ]] && continue
+    [[ ${pacver%-*} == ${pkg[0]%-*} ]] && continue
 
     # in vercmp we trust
-    if [[ $(vercmp ${pacver[0]} ${pkg[0]}) -gt 0 ]]; then
-      echo -e "${provide%=*} \033[1;31m${pkg[0]}\033[1;0m -> \033[1;32m${pacver[0]}\033[1;0m"
+    if [[ $(vercmp ${pacver} ${pkg[0]}) -gt 0 ]]; then
+      echo -e "${provide} \033[1;31m${pkg[0]}\033[1;0m -> \033[1;32m${pacver}\033[1;0m"
     fi
   done
 
