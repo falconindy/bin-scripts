@@ -3,15 +3,15 @@
 # iterate over manually installed packages
 for package in $(pacman -Qqm); do
   # parse pacman output to get the locally installed version and its provides
-  pkg=($(awk -F':' '/^Version/{print $2} /^Provides/{ gsub(/^[ \t]+/, "", $2); print $2 };' <(pacman -Qi $package)))
+  pkg=($(awk '/^Version/{print $3} /^Provides/{ for(i=3;i<=NF;i++) print $i };' <(pacman -Qi $package)))
 
   # for each provide found...
   for provide in ${pkg[@]:1}; do
     [[ $provide == "None" ]] && continue # provides array is empty
     provide=${provide%=*}
 
-    # slice the dep on the versioning if it exists, and search for it in pacman
-    pacver=$(awk -F':' '/^Version/{ gsub(/^[ \t]+/, "", $2); print $2; exit }' <(pacman -Si ${provide} 2>/dev/null))
+    # search pacman for the provide, and exit after the first result (in case of testing + other)
+    pacver=$(awk '/^Version/{ print $3; exit }' <(pacman -Si ${provide} 2>/dev/null))
     [[ -z ${pacver} ]] && continue
 
     # if they only differ in the build version, skip it
