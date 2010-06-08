@@ -66,25 +66,24 @@ validate_command() {
 }
 
 do_all_action() {
-  IFS=$'\n' read -r -d $'\0' -a repos < <(find "$REPOHOME" -type d -name '.git')
+  IFS=$'\n' read -r -d $'\0' -a repos < <(find "$REPOHOME" -type d -name '.git' -exec readlink -f {} \;)
 
   for repo in "${repos[@]}"; do
-    (( count++ ))
-    local repo=${repo%/.git}
+    (( ++count ))
+    local repo=${repo%.git}
     cd "$repo"
 
     output[$repo]=$("$@" 2>&1) &&
-      pass=(${pass[@]} "$repo") ||
-      fail=(${fail[@]} "$repo")
+      pass=(${pass[@]} "$repo") || fail=(${fail[@]} "$repo")
 
   done
 }
 
 stat_repos() {
-  IFS=$'\n' read -r -d $'\0' -a repos < <(find "$REPOHOME" -type d -name '.git')
+  IFS=$'\n' read -r -d $'\0' -a repos < <(find "$REPOHOME" -type d -name '.git' -exec readlink -f {} \;)
 
   for repo in "${repos[@]}"; do
-    local repo="${repo%/.git}"
+    local repo="${repo%.git}"
     cd "$repo"
     [[ -n $(git status -s | grep -v "^??") ]] && echo "$repo"
   done
