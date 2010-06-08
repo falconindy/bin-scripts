@@ -113,6 +113,8 @@ job_summary() {
 
 [[ -z $1 ]] && usage
 
+[[ ! -d "$REPOHOME" ]] && die "Invalid directory specified for \$REPOHOME" exit 1
+
 while getopts :Shfv flag; do
   case $flag in
     S) stat_repos
