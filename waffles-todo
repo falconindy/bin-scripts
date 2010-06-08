@@ -1,6 +1,6 @@
 #!/bin/bash
 
-IFS=$'\n' read -r -d $'\0' -a waffles < <(find /mnt/Gluttony/waffles -type f -links 1 -iname \*.flac -exec dirname {} \; | sort -u)
+IFS=$'\n' read -r -d $'\0' -a waffles < <(find /mnt/Gluttony/waffles -type f -links 1 \( -iname \*.flac -o -iname \*.mp3 \) -exec dirname {} \; | sort -u)
 
 [[ $# -eq 1 ]] && set $1 1
 [[ $# -eq 2 ]] && {
