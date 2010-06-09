@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# iterate over manually installed packages
+for package in $(pacman -Qqm); do
+  # parse pacman output to get the locally installed version and its provides
+  pkg=($(awk '/^Version/{print $3} /^Provides/{ for(i=3;i<=NF;i++) print $i };' <(pacman -Qi $package)))
+
+  # for each provide found...
+  for provide in ${pkg[@]:1}; do
+    [[ $provide == "None" ]] && continue # provides array is empty
+    provide=${provide%=*}
+
+    # search pacman for the provide, and exit after the first result (in case of testing + other)
+    pacver=$(awk '/^Version/{ print $3; exit }' <(pacman -Si ${provide} 2>/dev/null))
+    [[ -z ${pacver} ]] && continue
+
+    # if they only differ in the build version, skip it
+    [[ ${pacver%-*} == ${pkg[0]%-*} ]] && continue
+
+    # in vercmp we trust
+    if [[ $(vercmp ${pacver} ${pkg[0]}) -gt 0 ]]; then
+      echo -e "${provide} \033[1;31m${pkg[0]}\033[1;0m -> \033[1;32m${pacver}\033[1;0m"
+    fi
+  done
+
+done
+
