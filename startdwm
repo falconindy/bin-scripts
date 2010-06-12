@@ -1,7 +1,10 @@
 #!/bin/bash
 
-conky -c $HOME/.conky/.conkyrc | while read conkyout; do
-    xsetroot -name "$conkyout";
-done | while true; do
+config="${XDG_CONFIG_HOME:-$HOME/.config}/conky/conkyrc"
+
+while read out; do
+    xsetroot -name "$out";
+done < <(conky -c "$config") | while true; do
     dwm 2> ~/.dwm.log
 done
+
