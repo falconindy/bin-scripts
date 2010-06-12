@@ -21,7 +21,7 @@ image=feh
 video=mplayer
 default=${EDITOR:-vi} # Fallback -- should be a text editor
 
-handler[application/pdf]=apvlv
+handler[application/pdf]=zathura
 handler[application/vnd.oasis.opendocument.text]=$doc
 handler[doc]=$doc
 handler[image]=$image
