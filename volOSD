@@ -5,26 +5,46 @@
 # in calling this directly. Relies on ossmix.
 #
 # Example dwm usage:
-# static const char *volup[]     = { "volOSD",   "pcm2",  "+5" };
-# static const char *voldown[]   = { "volOSD",   "pcm2",  "-5" };
+# static const char *volup[]     = { "volOSD", "pcm2", "+5"     };
+# static const char *voldown[]   = { "volOSD", "pcm2", "-5"     };
+# static const char *voltoggle[] = { "volOSD", "pcm2", "toggle" };
 #
 
 mixer=$1
 increment=$2
+volstore=~/.volume
 
-display_volume=$(sed -n 's/.*:\([0-9\.]*\)$/\1/p' <(ossmix $mixer -- $increment))
-display_volume=${display_volume%%.*} # truncate decimal if any
+get_icon () {
+  icon_name="notification-audio-volume-"
 
-icon_name="notification-audio-volume-"
+  if [[ $display_volume -gt 67 ]]; then
+    icon_name+="high"
+  elif [[ $display_volume -gt 33 ]]; then 
+    icon_name+="medium"
+  elif [[ $display_volume -gt 0 ]]; then 
+    icon_name+="low"
+  else
+    icon_name+="muted"
+  fi
 
-if [[ $display_volume -gt 67 ]]; then
-  icon_name+="high"
-elif [[ $display_volume -gt 33 ]]; then 
-  icon_name+="medium"
-elif [[ $display_volume -gt 0 ]]; then 
-  icon_name+="low"
-else
-  icon_name+="muted"
-fi
+  echo $icon_name
+}
 
-notify-send " " -i $icon_name -h int:value:$display_volume -h string:synchronous:volume -t 1000
+adjust () {
+  display_volume=$(sed -n 's|.*:\([0-9\.]*\)$|\1|p' <(ossmix $1 -- $2))
+  display_volume=${display_volume%.*} # truncate decimal if any
+}
+
+toggle () {
+  if [[ -f "$volstore" ]]; then
+    increment=$(< "$volstore")
+    rm "$volstore"
+  else
+    ossmix $1 | sed -n 's|.*:\([0-9]*\)|\1|p' > "$volstore"
+    increment=0
+  fi
+}
+
+[[ $2 == "toggle" ]] && toggle $mixer
+adjust $mixer $increment
+notify-send " " -i $(get_icon) -h int:value:$display_volume -h string:synchronous:volume -t 1000
