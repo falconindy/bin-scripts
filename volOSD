@@ -31,7 +31,13 @@ get_icon () {
 }
 
 adjust () {
-  display_volume=$(sed -n 's|.*:\([0-9\.]*\)$|\1|p' <(ossmix $1 -- $2))
+  local inc=$2
+  if [[ -f "$volstore" && $increment -gt 0 ]]; then
+    inc=$(( $(< "$volstore") + $2 ))
+    rm "$volstore"
+  fi
+
+  display_volume=$(sed -n 's|.*:\([0-9\.]*\)$|\1|p' <(ossmix $1 -- $inc))
   display_volume=${display_volume%.*} # truncate decimal if any
 }
 
