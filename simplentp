@@ -2,9 +2,11 @@
 
 [[ $UID -ne 0 ]] && { echo "Error: Must be root!" >&2; exit 1; }
 
+timeserver="time.nist.gov"
+
 clockset() {
   echo "Setting hwclock to localtime from time.nist.gov..."
-  hwclock --set --date="$(awk '{if (NF > 1) print $2,$3 " UTC"}' < /dev/tcp/time.nist.gov/13)" || return 1
+  hwclock --set --date="$(awk '{if (NF > 1) print $2,$3 " UTC"}' < /dev/tcp/$timeserver/13)" || return 1
   echo "Sync'ing hwclock to system..."
   hwclock -s
   echo "The time is now:" $(hwclock)
