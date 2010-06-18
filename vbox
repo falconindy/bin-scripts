@@ -1,43 +1,93 @@
 #! /bin/bash
 
-VBOX_HOST=WinXP
-REMOTE_HOST=localhost
-REMOTE_PORT=3390
+vbox_host=WinXP
+remote_host=localhost
+remote_port=3390
 
-if [ "$1" == "start" ]; then
-	if [ -z `pgrep VBoxHeadless` ]; then
-		VBoxHeadless -startvm "$VBOX_HOST" &
-	else
-		echo "ERROR: VBox '$VBOX_HOST' is running."
-		exit 1
-	fi
-	disown
-elif [ "$1" == "stop" ]; then
-	if [ -z `pgrep VBoxHeadless` ]; then
-		echo "ERROR: VBox '$VBOX_HOST' is not running."
-		exit 1
-	else
-		VBoxManage controlvm "$VBOX_HOST" poweroff
-	fi
-elif [ "$1" == "connect" ]; then
-	echo -n "[vbox] password for `id -nu`: "
-	STTY_ORIG=`stty -g`
-	stty -echo
-	read PASSWORD
-	echo
-	stty $STTY_ORIG
+vms=($(VBoxManage list vms | sed -n 's|\"\([[:alnum:]\-_]*\)\" {[0-9a-f\-]*}|\1|p'))
 
-	if [ -z `pgrep VBoxHeadless` ]; then
-		VBoxHeadless -startvm "$VBOX_HOST" &
-		sleep 5
-	fi
-	rdesktop -p"$PASSWORD" $REMOTE_HOST:$REMOTE_PORT
-	disown
-	exit 0
-else
-	echo "USAGE: vbox start|stop|connect"
-	echo
-	echo "Host: $VBOX_HOST @ $REMOTE_HOST:$REMOTE_PORT"
-	echo "Status: `VBoxManage showvminfo $VBOX_HOST | grep State | cut -d" " -f12-`"
-fi		
+in_array() {
+  local needle=$1; shift
+  for item in "$@"; do
+    [[ $item == $needle ]] && echo "$item" && return 0
+  done
 
+  return 1;
+}
+
+usage() {
+  echo "USAGE: vbox <start|stop|connect> <vm name>"
+  echo
+  echo "Host: $vbox_host @ $remote_host:$remote_port"
+  echo "Status: $(VBoxManage showvminfo $vbox_host | grep State | cut -d" " -f12-)"
+
+  exit 1
+} >&2
+
+list_vms() {
+  echo "Valid VMs:"
+  echo
+  for vm in ${vms[@]}; do
+    echo $vm
+  done
+}
+
+start_vm() {
+  if ! pgrep VBoxHeadless; then
+    exec VBoxHeadless -startvm "$1" &
+  else
+    echo "ERROR: VBox '$1' is running."
+    exit 1
+  fi
+}
+
+stop_vm() {
+  if ! pgrep VBoxHeadless; then
+    echo "ERROR: VBox '$1' is not running."
+    exit 1
+  else
+    exec VBoxManage controlvm "$1" poweroff
+  fi
+}
+
+connect_vm() {
+  if ! type -p rdesktop; then
+    echo "rdesktop not found. connect functionality unavailable" >&2
+    exit 1
+  fi
+
+  echo -n "[vbox] password for `id -nu`: "
+  STTY_ORIG=`stty -g`
+  stty -echo
+  read PASSWORD
+  echo
+  stty $STTY_ORIG
+
+  if ! pgrep VBoxHeadless; then
+    VBoxHeadless -startvm "$1" &
+    sleep 5
+  fi
+  exec rdesktop -p"$PASSWORD" $remote_host:$remote_port
+  exit 0
+}
+
+[[ $# -lt 2 ]] && usage
+
+action=$1; shift
+
+oldcasematch=$(shopt -p nocasematch);
+shopt -s nocasematch
+vm=$(in_array $1 "${vms[@]}")
+[[ -z $vm ]] && { list_vms && exit 1; }
+$oldcasematch
+
+case "$action" in
+  'start')
+    start_vm "$vm" ;;
+  'stop')
+    stop_vm "$vm" ;;
+  'connect')
+    connect_vm "$vm" ;;
+  *)
+    usage ;;
+esac
