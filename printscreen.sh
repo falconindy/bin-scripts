@@ -1,0 +1,3 @@
+#!/bin/sh
+
+exec scrot '%Y.%m.%d-$wx$h.png'
