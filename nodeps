@@ -1,7 +1,0 @@
-#!/bin/bash
-
-pacman -Qq | while read pkg; do
-	if [[ $(grep -E "^Required.*None$" <(pacman -Qi $pkg)) ]]; then
-		 echo $pkg
-	fi
-done
