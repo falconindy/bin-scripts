@@ -5,13 +5,21 @@
 # in calling this directly. Relies on ossmix.
 #
 # Example dwm usage:
-# static const char *volup[]     = { "volOSD", "pcm2", "+5"     };
-# static const char *voldown[]   = { "volOSD", "pcm2", "-5"     };
-# static const char *voltoggle[] = { "volOSD", "pcm2", "toggle" };
+# static const char *volup[]     = { "volOSD", "oss", "pcm2", "+5"     };
+# static const char *voldown[]   = { "volOSD", "oss", "pcm2", "-5"     };
+# static const char *voltoggle[] = { "volOSD", "oss", "pcm2", "toggle" };
 #
 
-mixer=$1
-increment=$2
+# this should be 'alsa' or 'oss'
+output=$1
+
+# mixer name (e.g. PCM or pcm2)
+mixer=$2
+
+# amount to adjust mixer level by (-10, -5, 10)
+increment=$3
+
+# temp file for storing volume when muting
 volstore=~/.volume
 
 get_icon () {
@@ -30,27 +38,47 @@ get_icon () {
   echo $icon_name
 }
 
-adjust () {
+oss_adjust () {
   local inc=$2
   if [[ -f "$volstore" && $increment -gt 0 ]]; then
-    inc=$(( $(< "$volstore") + $2 ))
+    inc=$(( $(< "$volstore") + $increment ))
     rm "$volstore"
   fi
 
-  display_volume=$(sed -n 's|.*:\([0-9\.]*\)$|\1|p' <(ossmix $1 -- $inc))
+  display_volume=$(sed -n 's|.*:\([0-9\.]*\)$|\1|p' <(ossmix $mixer -- $inc))
   display_volume=${display_volume%.*} # truncate decimal if any
 }
 
-toggle () {
+oss_toggle () {
   if [[ -f "$volstore" ]]; then
     increment=$(< "$volstore")
-    rm "$volstore"
+    rm -f "$volstore"
   else
     ossmix $1 | sed -n 's|.*:\([0-9]*\)|\1|p' > "$volstore"
     increment=0
   fi
 }
 
-[[ $2 == "toggle" ]] && toggle $mixer
-adjust $mixer $increment
+alsa_adjust () {
+  local cur_vol=$(amixer sget $mixer | awk '/^  Front/{ print $4; exit }')
+  display_volume=$(( $cur_vol + $increment ))
+
+  amixer sset $mixer $display_volume >/dev/null
+}
+
+alsa_toggle () {
+  if [[ -f "$volstore" ]]; then
+    increment=$(< "$volstore")
+    rm -f "$volstore"
+  else
+    amixer sget $mixer | awk '/^  Front/{ print $4; exit }' > "$volstore"
+    increment=-$(< "$volstore")
+  fi
+}
+
+[[ $3 == "toggle" ]] && ${output}_toggle $mixer
+${output}_adjust $mixer $increment
+
+echo $display_volume
+
 notify-send " " -i $(get_icon) -h int:value:$display_volume -h string:synchronous:volume -t 1000
