@@ -1,8 +1,9 @@
 #!/bin/bash
-
 #
 # This is intended to be a hook from a WM to notify-osd. There's not much sense
-# in calling this directly. Relies on ossmix.
+# in calling this directly.
+#
+# Requires: ossmix for OSS, amixer for ALSA
 #
 # Example dwm usage:
 # static const char *volup[]     = { "volOSD", "oss", "pcm2", "+5",     NULL };
