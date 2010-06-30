@@ -5,9 +5,9 @@
 # in calling this directly. Relies on ossmix.
 #
 # Example dwm usage:
-# static const char *volup[]     = { "volOSD", "oss", "pcm2", "+5"     };
-# static const char *voldown[]   = { "volOSD", "oss", "pcm2", "-5"     };
-# static const char *voltoggle[] = { "volOSD", "oss", "pcm2", "toggle" };
+# static const char *volup[]     = { "volOSD", "oss", "pcm2", "+5",     NULL };
+# static const char *voldown[]   = { "volOSD", "oss", "pcm2", "-5",     NULL }; 
+# static const char *voltoggle[] = { "volOSD", "oss", "pcm2", "toggle", NULL };
 #
 
 # this should be 'alsa' or 'oss'
