@@ -7,6 +7,6 @@ if [[ $# -eq 0 ]]; then
     exit 1
 fi
 
-[[ -z $2 ]] && set $1 1
+quantity=${2:-1}
 
-cat /dev/urandom | tr -dc $ALLOWEDCHARS | fold -w $1 | head -n $2
+cat /dev/urandom | tr -dc $ALLOWEDCHARS | fold -w $1 | head -n $quantity
