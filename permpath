@@ -1,20 +1,9 @@
 #!/bin/bash
-
-#!/bin/bash
 # list directory permissions along the path
 
-if [ -n "$1" ];then
-	dirpath=$1
-	else
-	dirpath=$(pwd)
-fi
+IFS='/' read -r -a dirpath <<< "${1:-$(pwd)}"
 
-IFS='/'
-
-for part in $dirpath;do
-   unset IFS
-   grow="$grow""$part""/"
-   echo $(ls -asld --color --time-style=long-iso $grow | cut -d ' ' -f 2,4,5,9)
+for part in "${dirpath[@]}"; do
+  working+="$part/"
+  find "$working" -maxdepth 0 -printf "%M %10u %10g %p\n"
 done
-
-exit 0
