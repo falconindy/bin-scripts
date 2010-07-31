@@ -1,4 +1,9 @@
 #!/bin/bash
-xprop |awk '
-    /^WM_CLASS/{sub(/.* =/, "instance:"); sub(/,/, "\nclass:"); print}
-    /^WM_NAME/{sub(/.* =/, "title:"); print}'
+
+#xprop |awk '
+#    /^WM_CLASS/{sub(/.* =/, "instance:"); sub(/,/, "\nclass:"); print}
+#    /^WM_NAME/{sub(/.* =/, "title:"); print}'
+
+xprop | sed -n '
+    /^WM_CLASS/s/.* = "\(.*\)", "\(.*\)"/instance: \1\nclass: \2/p;
+    /^WM_NAME/s/.* = "\(.*\)"/title: \1/p'
