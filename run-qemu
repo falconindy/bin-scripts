@@ -1,0 +1,3 @@
+#!/bin/bash
+
+exec qemu -enable-kvm -net nic -net tap,ifname="$(sudo tunctl -b -u $USER)" -k en-us $@
