@@ -61,10 +61,10 @@ oss_toggle () {
 }
 
 alsa_adjust () {
-  local cur_vol=$(amixer sget $mixer | awk '/^  Front/{ print $4; exit }')
+  local cur_vol=$(amixer sget $mixer | sed -n '/^ *Front Left/s/.*\[\([0-9]\+\)%\].*/\1/p')
   display_volume=$(( $cur_vol + $increment ))
 
-  amixer sset $mixer $display_volume >/dev/null
+  amixer sset $mixer $display_volume% >/dev/null
 }
 
 alsa_toggle () {
@@ -79,7 +79,5 @@ alsa_toggle () {
 
 [[ $3 == "toggle" ]] && ${output}_toggle $mixer
 ${output}_adjust $mixer $increment
-
-echo $display_volume
 
 notify-send " " -i $(get_icon) -h int:value:$display_volume -h string:synchronous:volume -t 1000
