@@ -1,0 +1,21 @@
+#!/bin/bash
+
+[[ -z $1 ]] && {
+  echo "Usage: ${0##*/} <XResources color file>" >&2
+  exit 1
+}
+
+hex2dec() {
+  for val; do
+    printf "%3d " 0x$val
+  done
+  echo
+}
+
+printf "\t\t%3s %3s %3s\n" "R" "G" "B"
+while read line; do
+  [[ ! $line =~ ^\*color ]] && continue
+  echo -ne "${line% *}\t"
+  hex2dec $(sed -n 's/.* #\([[:alnum:]]\{2\}\)\([[:alnum:]]\{2\}\)\([[:alnum:]]\{2\}\)$/\1 \2 \3/p' <<< "$line")
+done < $1
+
