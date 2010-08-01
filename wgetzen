@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# wgetzen - a wrapper for wget using zenity
+
+# files: change these if needed/wanted
+WGETFIFO=/tmp/wgetfifo
+COOKIEFILE=~/.config/jumanji/cookies
+
+# $1 => source URL
+# $2 => destination file
+[[ $# != 2 ]] && exit
+
+# progs: less likely you'll want to change these
+WGET=$(type -P wget)
+ZENITY=$(type -P zenity)
+WGETCMD=("$WGET" -c --load-cookies "$COOKIEFILE" "$1" -O "$2")
+ZENITYCMD=("$ZENITY" --progress --auto-close --title "Downloading to $2" --text "$1")
+
+# insure that wget is killed if the script ends before it does
+trap_exit() {
+  [[ -p "$WGETFIFO" ]] && rm -f "$WGETFIFO"
+  [[ -d /proc/$wgetpid ]] && kill $wgetpid
+}
+trap 'trap_exit' HUP INT EXIT
+
+# it's not possible to tie wget directly to zenity because we need wget's PID
+# in order to kill it when the cancel button is pressed on the zenity dialog.
+[[ ! -p $WGETFIFO ]] && mkfifo $WGETFIFO
+
+"${WGETCMD[@]}" "$@" &> "$WGETFIFO" &
+wgetpid=$!
+
+"${ZENITYCMD[@]}" < <(sed -u 's/ *[0-9]*K[\ \.]\+\([0-9]\+\)%.*/\1/p' < "$WGETFIFO")
+
