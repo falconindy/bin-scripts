@@ -1,0 +1,13 @@
+#!/bin/bash
+
+IFS=$'\n' read -r -d $'\0' -a waffles < <(find /mnt/Gluttony/waffles -type f -links 1 \( -iname \*.flac -o -iname \*.mp3 \) -exec dirname {} \; | uniq)
+
+if [[ -n $1 ]]; then
+  items=("${waffles[@]:$1:${2:-1}}")
+else
+  items=("${waffles[@]}")
+fi
+
+for item in "${items[@]}"; do
+  echo $item
+done
