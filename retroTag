@@ -76,7 +76,7 @@ get_existing_tags() {
   IFS=$'\n' read -r -d'\0' -a existing_tags < <(git tag)
 }
 
-review_commits() {
+review_candidates() {
   msg "Found ${#commits[@]} commits worthy of tagging. Press enter to review the commits."
   read
   for commit in "${commits[@]}"; do
@@ -130,7 +130,7 @@ tag_commits() {
 check_repo_sanity
 find_taggable_commits
 get_existing_tags
-review_commits
+review_candidates
 ask_abort
 tag_commits
 
