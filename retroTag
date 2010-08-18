@@ -1,0 +1,136 @@
+#!/bin/bash
+
+#
+# written for alex to retroactively tag his repos based on a VERSION file which
+# was conveniently bumped for each of his "releases".
+#
+
+declare -a commits
+declare -a existing_ags
+
+die() {
+  local mesg=$1; shift
+  printf "\033[1;31m::\033[0m ${mesg}\n" "$@" >&2
+}
+
+warn() {
+  local mesg=$1; shift
+  printf "\033[1;33m::\033[0m ${mesg}\n" "$@" >&2
+}
+
+info() {
+  local mesg=$1; shift
+  printf " \033[1;34m::\033[1;0m\033[1;1m ${mesg}\033[1;0m\n" "$@"
+}
+
+msg() {
+  local mesg=$1; shift
+  printf " \033[1;32m==>\033[1;0m\033[1;1m ${mesg}\033[1;0m\n" "$@"
+}
+
+in_array() {
+  local item needle=$1; shift
+  [[ -z "$1" ]] && return 1 # Not Found
+  for item; do
+    [[ $item = "$needle" ]] && return 0 # Found
+  done
+  return 1 # Not Found
+}
+
+check_repo_sanity() {
+  if ! git rev-parse --quiet --verify HEAD &>/dev/null; then
+    die "error: Not in a git repo"
+    exit 1
+  fi
+  if ! git diff-index --quiet HEAD; then
+    die "error: repo is dirty. Please commit or stash your changes before running this script."
+    exit 1
+  fi
+}
+
+find_taggable_commits() {
+  local commit action file
+
+  while read -r line; do
+    [[ $line =~ ^$ ]] && continue
+    if [[ ! $line =~ ^: ]]; then
+      # current commit being examined
+      read commit <<< $line
+      continue
+    fi
+
+    # parse file change information
+    read -r _ _ _ _ action file <<< $line
+    if [[ $action =~ [AM] && $file == "VERSION" ]]; then
+      commits+=("$commit")
+    fi
+  done < <(git whatchanged --format="%H %ai")
+
+  if (( ${#commits[@]} == 0 )); then
+    die "error: No candidate commits were found for tagging" >&2
+    exit 1
+  fi
+}
+
+get_existing_tags() {
+  IFS=$'\n' read -r -d'\0' -a existing_tags < <(git tag)
+}
+
+review_commits() {
+  msg "Found ${#commits[@]} commits worthy of tagging. Press enter to review the commits."
+  read
+  for commit in "${commits[@]}"; do
+    read hash date <<< $commit
+    git show --stat $hash
+  done
+}
+
+ask_abort() {
+  read -N1 -p "Satisfied? Continue with tagging? (y/N) " reply
+  echo
+  [[ ! "$reply" =~ [Yy] ]] && { echo "Aborting..."; exit 1; }
+}
+
+tag_commits() {
+  local count=0
+
+  for commit in "${commits[@]}"; do
+    read hash date <<< $commit
+    [[ -z $hash || -z $date ]] && { die "Fatal error! Something is horribly wrong!"; exit 42; }
+
+    # make a new branch, rewound to the commit
+    git checkout $hash -b $hash &>/dev/null
+
+    read version < VERSION
+
+    # if the tag exists, skip tagging
+    if in_array $version "${existing_tags[@]}"; then
+      warn "Tag \"$version\" already exists. Skipping..."
+    else
+      GIT_COMMITTER_DATE="$date" git tag -a "$version" -m "tag as $version" &>/dev/null
+      info "${hash:0:8} => $version"
+      (( ++count ))
+    fi
+
+    # reset for next iteration
+    { git checkout master; git branch -d $hash; } &>/dev/null
+    unset hash date
+  done
+
+  if (( count > 0 )); then
+    echo
+    msg "Finished: Added $count new tags. Use \`git push --tags\` to update the remote."
+  else
+    echo
+    msg "Finished: No new tags were added."
+  fi
+}
+
+# main loop
+check_repo_sanity
+find_taggable_commits
+get_existing_tags
+review_commits
+ask_abort
+tag_commits
+
