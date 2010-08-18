@@ -6,7 +6,7 @@
 #
 
 declare -a commits
-declare -a existing_ags
+declare -a existing_tags
 
 die() {
   local mesg=$1; shift
