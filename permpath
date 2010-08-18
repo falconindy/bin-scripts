@@ -5,5 +5,5 @@ IFS='/' read -r -a dirpath <<< "${1:-$(pwd)}"
 
 for part in "${dirpath[@]}"; do
   working+="$part/"
-  find "$working" -maxdepth 0 -printf "%M %10u %10g %p\n"
+  stat $working --printf "%A %10U %10G %n\n"
 done
