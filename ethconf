@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ $# -lt 2 ]]; then
+if (( $# < 2 )); then
     echo "Usage: ${0##*/} <device> <ip_address> [gateway]"
     echo "gateway will default to X.Y.Z.1 if not provided"
     exit 1
@@ -8,10 +8,9 @@ fi
 
 iface=$1
 ip=$2
-netmask="255.255.255.0"
-broadcast=${ip%[0-9]*}.255
-
-[[ -z $3 ]] && gateway=${ip%[0-9]*}.1 || gateway=$3
+netmask=255.255.255.0
+broadcast=${ip%.[0-9]*}.255
+gateway=${3:-${ip%.[0-9]*}.1}
 
 sudo ifconfig $iface $ip netmask $netmask broadcast $broadcast
 sudo route add default gw $gateway $iface
