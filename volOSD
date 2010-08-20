@@ -42,7 +42,7 @@ get_icon () {
 oss_adjust () {
   local inc=$2
   if [[ -f "$volstore" && $increment -gt 0 ]]; then
-    inc=$(( $(< "$volstore") + $increment ))
+    inc=$(( $(< "$volstore") + increment ))
     rm "$volstore"
   fi
 
@@ -62,7 +62,7 @@ oss_toggle () {
 
 alsa_adjust () {
   local cur_vol=$(amixer sget $mixer | sed -n '/^ *Front Left/s/.*\[\([0-9]\+\)%\].*/\1/p')
-  display_volume=$(( $cur_vol + $increment ))
+  display_volume=$(( cur_vol + increment ))
 
   amixer sset $mixer $display_volume% >/dev/null
 }
