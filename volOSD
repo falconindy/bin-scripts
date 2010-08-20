@@ -41,7 +41,7 @@ get_icon () {
 
 oss_adjust () {
   local inc=$2
-  if [[ -f "$volstore" && $increment -gt 0 ]]; then
+  if [[ -f "$volstore" ]] && (( increment > 0 )); then
     inc=$(( $(< "$volstore") + increment ))
     rm "$volstore"
   fi
@@ -52,7 +52,7 @@ oss_adjust () {
 
 oss_toggle () {
   if [[ -f "$volstore" ]]; then
-    increment=$(< "$volstore")
+    read increment < "$volstore"
     rm -f "$volstore"
   else
     ossmix $1 | sed -n 's|.*:\([0-9]*\)|\1|p' > "$volstore"
@@ -61,15 +61,21 @@ oss_toggle () {
 }
 
 alsa_adjust () {
-  local cur_vol=$(amixer sget $mixer | sed -n '/^ *Front Left/s/.*\[\([0-9]\+\)%\].*/\1/p')
-  display_volume=$(( cur_vol + increment ))
+  local cur_vol stored_vol
+  if [[ -f "$volstore" ]] && (( increment > 0 )); then
+    read stored_vol < "$volstore"
+    rm -f "$volstore"
+  fi
+
+  cur_vol=$(amixer sget $mixer | sed -n '/^ *Front Left/s/.*\[\([0-9]\+\)%\].*/\1/p')
+  display_volume=$(( cur_vol + stored_vol + increment ))
 
   amixer sset $mixer $display_volume% >/dev/null
 }
 
 alsa_toggle () {
   if [[ -f "$volstore" ]]; then
-    increment=$(< "$volstore")
+    read increment < "$volstore"
     rm -f "$volstore"
   else
     amixer sget $mixer | awk '/^  Front/{ print $4; exit }' > "$volstore"
