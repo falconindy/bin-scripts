@@ -1,0 +1,10 @@
+#!/bin/bash
+
+WP_ROOT="$HOME/var/pic/wallpaper/16:10"
+
+shopt -s globstar # to enable **
+wallpapers=( $WP_ROOT/**/* )
+
+r_index=$(( RANDOM % ${#wallpapers[@]} ))
+
+echo ${wallpapers[r_index]}
