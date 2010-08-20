@@ -2,19 +2,21 @@
 
 # wgetzen - a wrapper for wget using zenity
 
+type -P zenity >/dev/null || { echo "zenity binary not found!">&2; exit 1; }
+
 # files: change these if needed/wanted
 WGETFIFO=/tmp/wgetfifo
 COOKIEFILE=~/.config/jumanji/cookies
 
-# $1 => source URL
-# $2 => destination file
-[[ $# != 2 ]] && exit
+(( $# == 0 )) && exit
+src=$1
+dst=${2:-$HOME/${src##*/}}
 
 # progs: less likely you'll want to change these
 WGET=$(type -P wget)
 ZENITY=$(type -P zenity)
-WGETCMD=("$WGET" -c --load-cookies "$COOKIEFILE" "$1" -O "$2")
-ZENITYCMD=("$ZENITY" --progress --auto-close --title "Downloading to $2" --text "$1")
+WGETCMD=("$WGET" -c --load-cookies "$COOKIEFILE" "$src" -O "$dst")
+ZENITYCMD=("$ZENITY" --progress --auto-close --title "Downloading to $dst" --text "$src")
 
 # insure that wget is killed if the script ends before it does
 trap_exit() {
