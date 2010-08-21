@@ -1,9 +1,7 @@
 #!/bin/bash
 
-if [[ -t 0 ]] && (( $# == 0 )); then
-  echo "error: ${0##*/} requires a file argument or data on STDIN" >&2
-  exit 1
-fi
+NUMFIELDS=0
+OUT=()
 
 # use a common FD based on where we read from
 case $# in
@@ -11,24 +9,27 @@ case $# in
   1) exec 5< $1 ;;
 esac
 
-NUMFIELDS=0
+trap 'exec 5<&-' 0
 
-echo "<table>"
+OUT+=("<table>")
 while IFS=',' read -r -a items; do
-  printf "\t<tr>\n" # start row
+  OUT+=("\t<tr>") # start row
 
   (( NUMFIELDS == 0 )) && NUMFIELDS=${#items[@]}
   if (( NUMFIELDS != ${#items[@]} )); then
-    echo "Malformed CSV file. Expected $NUMFIELDS fields, found ${#items[@]}" >&2
-    exit 2
+    echo "error: Malformed CSV. Expected $NUMFIELDS fields, found ${#items[@]}" >&2
+    exit 1
   fi
 
   for item in "${items[@]}"; do
-    printf "\t\t<td>%s</td>\n" "$item"
+    OUT+=("\t\t<td>$item</td>") # column
   done
 
-  printf "\t</tr>\n" # end row
+  OUT+=("\t</tr>") # end row
 done <&5
-echo "</table>"
+OUT+=("</table>")
 
-exec 5<&-
+for line in "${OUT[@]}"; do
+  echo -e $line
+done
+
