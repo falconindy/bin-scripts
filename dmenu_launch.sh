@@ -8,9 +8,10 @@ selbgcolor="#3465A4"
 selfgcolor="#FFFFFF"
 
 cmd=$(dmenu_path | dmenu -i -b -fn $font -nb $normbgcolor -nf $normfgcolor -sb $selbgcolor -sf $selfgcolor)
+basecmd=${cmd%% *}
 
-case ${cmd%% *} in
-  ncmpcpp|htop|vim)   exec $term -name $cmd -e $cmd ;;
+case ${basecmd} in
+  ncmpcpp|htop|vim)   exec $term -name $basecmd -e $basecmd ;;
   tmux)               exec $term -name tmux -geometry 122x77 -e tmux -L main attach ;;
   *)                  exec $cmd
 esac
