@@ -4,6 +4,7 @@ NUMFIELDS=0
 OUT=()
 
 # use a common FD based on where we read from
+# TODO: Currently ignores args after the first. Allow reading from multiple files?
 case $# in
   0) exec 6<&0 ;;
   *) exec 6< "$1" ;;
@@ -11,28 +12,32 @@ esac
 
 trap 'exec 6<&-' 0
 
-OUT+=("<table>")
+LC=0 # line counter in case of error
+OUT+=("<table>\n")
 while IFS=',' read -r -a items; do
-  OUT+=("\t<tr>") # start row
+  (( ++LC ))
+  OUT+=("\t<tr>\n") # start row
 
+  # skip blank lines, but not lines with empty fields
   (( ${#items[@]} == 0 )) && continue
 
   # assert: all rows are same number of columns
   (( NUMFIELDS == 0 )) && NUMFIELDS=${#items[@]}
   if (( NUMFIELDS != ${#items[@]} )); then
-    echo "error: Malformed CSV. Expected $NUMFIELDS fields, found ${#items[@]}" >&2
+    echo "error: Malformed CSV (line $LC). Expected $NUMFIELDS fields, found ${#items[@]}." >&2
     exit 1
   fi
 
+  # output each column, stripping NULL tokens
   for item in "${items[@]}"; do
-    OUT+=("\t\t<td>$item</td>") # column
+    OUT+=("\t\t<td>${item/==NULL==/}</td>\n")
   done
 
-  OUT+=("\t</tr>") # end row
-done <&6
-OUT+=("</table>")
+  OUT+=("\t</tr>\n") # end row
 
-for line in "${OUT[@]}"; do
-  echo -e $line
-done
+# replace blank fields with a dummy value so read doesn't skip them
+done < <(sed 's/^,/==NULL==,/; s/,,/,==NULL==,/g; s/,$/,==NULL==/' <&6)
+OUT+=("</table>\n")
+
+echo -e "${OUT[@]}"
 
