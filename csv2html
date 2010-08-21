@@ -6,7 +6,7 @@ OUT=()
 # use a common FD based on where we read from
 case $# in
   0) exec 5<&0 ;;
-  1) exec 5< $1 ;;
+  *) exec 5< "$1" ;;
 esac
 
 trap 'exec 5<&-' 0
