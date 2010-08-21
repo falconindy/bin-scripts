@@ -1,14 +1,27 @@
 #!/bin/bash
 
-exec >> output.html
+if [[ -t 0 ]] && (( $# == 0 )); then
+  echo "error: ${0##*/} requires a file argument or data on STDIN" >&2
+  exit 1
+fi
 
+# use a common FD based on where we read from
+case $# in
+  0) exec 5<&0 ;;
+  1) exec 5< $1 ;;
+esac
+
+IFS=','
 echo "<table>"
 while read line; do
     printf "\t<tr>\n"
-    IFS=$','
+
     for item in $line; do
         printf "\t\t<td>%s</td>\n" $item
     done
+
     printf "\t</tr>\n"
-done < table.csv
-echo "</table>" 
+done <&5
+echo "</table>"
+
+exec 5<&-
