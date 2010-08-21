@@ -11,16 +11,15 @@ case $# in
   1) exec 5< $1 ;;
 esac
 
-IFS=','
 echo "<table>"
-while read line; do
-    printf "\t<tr>\n"
+while IFS=',' read -r -a items; do
+  printf "\t<tr>\n" # start row
 
-    for item in $line; do
-        printf "\t\t<td>%s</td>\n" $item
-    done
+  for item in "${items[@]}"; do
+    printf "\t\t<td>%s</td>\n" "$item"
+  done
 
-    printf "\t</tr>\n"
+  printf "\t</tr>\n" # end row
 done <&5
 echo "</table>"
 
