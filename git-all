@@ -1,4 +1,15 @@
 #!/bin/bash
+# Usage: git-all [-Sfhv] [command...]"
+#
+#   -S    Show repos which have uncommitted changes. If this"
+#          option is specified, all other options are ignored."
+#
+#   -f    suppress prompting before a custom command is run"
+#   -v    print error output in job summary for failed jobs"
+#
+# Actions will be performed on $REPOHOME, which defaults to $HOME"
+# if not specified."
+#
 
 REPOHOME=${REPOHOME:-$HOME}
 FORCE=0
@@ -8,23 +19,6 @@ count=0
 declare -a fail
 declare -a pass
 declare -A output
-
-usage() {
-  echo "Usage: ${0##*/} [options] [command]"
-  echo
-  echo "   -S    Show repos which have uncommitted changes. If this"
-  echo "          option is specified, all other options are ignored."
-  echo
-  echo "   -f    suppress prompting before a custom command is run"
-  echo "   -h    print this help message"
-  echo "   -v    print error output in job summary for failed jobs"
-  echo
-  echo " Actions will be performed on \$REPOHOME, which defaults to \$HOME"
-  echo " if not specified."
-  echo
-
-  exit 1
-} >&2
 
 die() {
   local mesg=$1; shift
@@ -87,8 +81,6 @@ stat_repos() {
     cd "$repo"
     [[ -n $(git status -s | grep -v "^??") ]] && echo "$repo"
   done
-
-  exit 0
 }
 
 job_summary() {
@@ -111,32 +103,32 @@ job_summary() {
   echo
 }
 
-[[ -z $1 ]] && usage
+# sanity check
+[[ ! -r "$REPOHOME" ]] && die "Invalid \$REPOHOME: $REPOHOME" exit 1
 
-[[ ! -d "$REPOHOME" ]] && die "Invalid directory specified for \$REPOHOME" exit 1
-
-while getopts :Shfv flag; do
+while getopts :Sfv flag; do
   case $flag in
     S) stat_repos
-      ;;
-    h) usage
+       exit 0
       ;;
     f) FORCE=1
       ;;
     v) VERBOSE=1
       ;;
     \?) die "invalid option -- '$OPTARG'"
-      usage
       ;;
   esac >&2
 done
 
 shift $(( OPTIND-1 ))
 
-# did user only provide flags?
-[[ -z $1 ]] && usage
+# check command line usage
+if [[ -z $1 ]]; then
+  sed -n '2,/^$/s/^# \?//p' "$0"
+  exit 1
+fi
 
-# meat
+# main loop
 (( FORCE )) || verify_execute "$*"
 validate_command "$1"
 do_all_action "$@"
