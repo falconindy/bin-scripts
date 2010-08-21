@@ -16,6 +16,7 @@ printf "\t\t%3s %3s %3s\n" "R" "G" "B"
 while read line; do
   [[ ! $line =~ ^\*color ]] && continue
   echo -ne "${line% *}\t"
-  hex2dec $(sed -n 's/.* #\([[:alnum:]]\{2\}\)\([[:alnum:]]\{2\}\)\([[:alnum:]]\{2\}\)$/\1 \2 \3/p' <<< "$line")
+  hexcode=${line/\*color* /}
+  hex2dec ${hexcode:1:2} ${hexcode:3:2} ${hexcode:5:2}
 done < $1
 
