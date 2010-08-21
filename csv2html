@@ -11,9 +11,17 @@ case $# in
   1) exec 5< $1 ;;
 esac
 
+NUMFIELDS=0
+
 echo "<table>"
 while IFS=',' read -r -a items; do
   printf "\t<tr>\n" # start row
+
+  (( NUMFIELDS == 0 )) && NUMFIELDS=${#items[@]}
+  if (( NUMFIELDS != ${#items[@]} )); then
+    echo "Malformed CSV file. Expected $NUMFIELDS fields, found ${#items[@]}" >&2
+    exit 2
+  fi
 
   for item in "${items[@]}"; do
     printf "\t\t<td>%s</td>\n" "$item"
