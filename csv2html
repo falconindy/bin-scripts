@@ -45,9 +45,6 @@ else
   done
 fi
 
-# and ensure its closed
-trap 'exec 6<&-' 0
-
 OUT+=("</table>\n") # footer
 
 echo -e "${OUT[@]}"
