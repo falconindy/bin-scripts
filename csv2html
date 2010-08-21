@@ -5,16 +5,19 @@ OUT=()
 
 # use a common FD based on where we read from
 case $# in
-  0) exec 5<&0 ;;
-  *) exec 5< "$1" ;;
+  0) exec 6<&0 ;;
+  *) exec 6< "$1" ;;
 esac
 
-trap 'exec 5<&-' 0
+trap 'exec 6<&-' 0
 
 OUT+=("<table>")
 while IFS=',' read -r -a items; do
   OUT+=("\t<tr>") # start row
 
+  (( ${#items[@]} == 0 )) && continue
+
+  # assert: all rows are same number of columns
   (( NUMFIELDS == 0 )) && NUMFIELDS=${#items[@]}
   if (( NUMFIELDS != ${#items[@]} )); then
     echo "error: Malformed CSV. Expected $NUMFIELDS fields, found ${#items[@]}" >&2
@@ -26,7 +29,7 @@ while IFS=',' read -r -a items; do
   done
 
   OUT+=("\t</tr>") # end row
-done <&5
+done <&6
 OUT+=("</table>")
 
 for line in "${OUT[@]}"; do
