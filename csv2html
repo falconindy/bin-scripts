@@ -28,7 +28,9 @@ to_html() {
     OUT+=("\t</tr>\n") # end row
 
   # replace blank fields with a dummy value so read doesn't skip them
-  done < <(sed 's/^,/==NULL==,/; s/,,/,==NULL==,/g; s/,$/,==NULL==/' <&6)
+  done < <(sed 's/^,/==NULL==,/;
+                s/,,/,==NULL==,/g;
+                s/,$/,==NULL==/' <&6)
 }
 
 OUT+=("<table>\n") # header
