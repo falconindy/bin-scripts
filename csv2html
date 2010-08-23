@@ -2,12 +2,13 @@
 
 NUMFIELDS=0
 OUT=()
+TLC=0
 
 to_html() {
-  local LC=0 # line counter in case of error
+  local lc=0 # line counter in case of error
 
   while IFS=',' read -r -a items; do
-    (( ++LC ))
+    (( ++lc ))
     OUT+=("\t<tr>\n") # start row
 
     # skip blank lines, but not lines with empty fields
@@ -26,6 +27,8 @@ to_html() {
     done
 
     OUT+=("\t</tr>\n") # end row
+
+    (( TLC += lc ))
 
   # replace blank fields with a dummy value so read doesn't skip them
   done < <(sed 's/^,/==NULL==,/;
@@ -47,8 +50,5 @@ else
   done
 fi
 
-OUT+=("</table>\n") # footer
-
-echo -e "${OUT[@]}"
-
+(( TLC > 0 )) && OUT+=("</table>\n") # footer
 
