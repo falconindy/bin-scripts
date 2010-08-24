@@ -48,6 +48,7 @@ oss_adjust () {
 
   display_volume=$(sed -n 's|.*:\([0-9\.]*\)$|\1|p' <(ossmix $mixer -- $inc))
   display_volume=${display_volume%.*} # truncate decimal if any
+  (( display_volume < 0 )) && display_volume = 0
 }
 
 oss_toggle () {
@@ -69,6 +70,7 @@ alsa_adjust () {
 
   cur_vol=$(amixer sget $mixer | sed -n '/^ *Front Left/s/.*\[\([0-9]\+\)%\].*/\1/p')
   display_volume=$(( cur_vol + stored_vol + increment ))
+  (( display_volume < 0 )) && display_volume=0
 
   amixer sset $mixer $display_volume% >/dev/null
 }
