@@ -1,7 +1,14 @@
 #!/bin/bash
 # list directory permissions along the path
 
-IFS='/' read -r -a dirpath <<< "${1:-$(pwd)}"
+target="${1:-$(pwd)}"
+
+if [[ ! -e $target ]]; then
+  echo "${0##*/}: cannot stat \`$target': No such file or directory"
+  exit 1
+fi
+
+IFS='/' read -r -a dirpath <<< "$target"
 
 for part in "${dirpath[@]}"; do
   working+="$part/"
