@@ -5,5 +5,5 @@ IFS='/' read -r -a dirpath <<< "${1:-$(pwd)}"
 
 for part in "${dirpath[@]}"; do
   working+="$part/"
-  stat $working --printf "%A %10U %10G %n\n"
-done
+  stat $working --printf "%A %U %G %n\n"
+done | column -t
