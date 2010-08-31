@@ -2,9 +2,8 @@
 
 WP_ROOT="$HOME/var/pic/wallpaper/16:10"
 
-shopt -s globstar # to enable **
-wallpapers=( $WP_ROOT/**/* )
+IFS=$'\n' read -d'\0' -r -a wallpapers < <(find $WP_ROOT -type f)
 
 r_index=$(( RANDOM % ${#wallpapers[@]} ))
-
 echo ${wallpapers[r_index]}
+
