@@ -1,0 +1,24 @@
+#!/bin/bash
+#
+# `git status' isn't always reliable at telling us the local repo is ahead of
+# the remote. This is.
+#
+
+ORIGIN=${1:-origin}
+
+# get remote HEAD (assumes origin as remote)
+read remote_head _ < <(git ls-remote $ORIGIN HEAD 2>/dev/null)
+[[ -z $remote_head ]] && exit 1
+
+# find remote_head in local commits
+n=$(sed -n "/$remote_head/=" <(git rev-list --all))
+
+if [[ ! $n ]]; then
+  echo "remote > local"
+elif (( n == 1 )); then
+  echo "nothing to commit"
+else
+  (( n-- ))
+  echo "local > remote (ahead by $n commit(s))"
+fi
+
