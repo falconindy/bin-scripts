@@ -11,8 +11,8 @@ for package in $(pacman -Qqm); do
 
     [[ -z ${pacver} || ${pacver%-*} == ${pkg[0]%-*} ]] && continue
 
-    [[ $(vercmp ${pacver} ${pkg[0]}) -gt 0 ]] &&
-      echo -e "${provide} \033[1;31m${pkg[0]}\033[1;0m -> \033[1;32m${pacver}\033[1;0m"
+    vercmp=$(vercmp ${pacver} ${pkg[0]})
+    (( vercmp > 0 )) && echo -e "$package [${provide}] \033[1;31m${pkg[0]}\033[1;0m -> \033[1;32m${pacver}\033[1;0m"
 
   done
 done
