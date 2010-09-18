@@ -1,7 +1,6 @@
 #!/bin/bash
 #
-# `git status' isn't always reliable at telling us the local repo is ahead of
-# the remote. This is.
+# Emulates hg's `outgoing' command
 #
 
 ORIGIN=${1:-origin}
@@ -19,6 +18,8 @@ elif (( n == 1 )); then
   echo "nothing to commit"
 else
   (( n-- ))
-  echo "local > remote (ahead by $n commit(s))"
+  echo "Outstanding commits:"
+  git --no-pager log --pretty=oneline HEAD~$n..
+
 fi
 
