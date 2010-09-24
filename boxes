@@ -1,0 +1,136 @@
+#!/bin/bash
+DGRAY="\e[0;30m"
+PINK="\e[0;31m"
+TEAL="\e[01;32m"
+WHITE="\e[0;37m"
+GREEN="\e[1;32m"
+PISS="\e[0;33m"
+GRAY="\e[0;37m"
+YELLOW="\e[0;33m"
+COL5="\e[0;32m";
+COLOFF="\x1b[0;37;00m";
+RESET="\e[0m"
+
+ask_yesno() {
+  read -p "$1 [N/y] " yesno
+  [[ ${yesno:0:1} == [Yy] ]]
+  return # implicitly returns value of above compare
+}
+
+SERVERS="$HOME/.servers.list"
+if [[ ! -f "$SERVERS" ]]; then
+  if ask_yesno "No server list found, would you like to create one now?"; then
+    touch $SERVERS || { echo "Unable to write to '$SERVERS'"; exit 1; }
+  else
+    echo "Canceling..."
+    exit 1
+  fi
+fi
+
+# sweep server list
+sed -i '/^[\t\ ]*$/d' "$SERVERS"
+
+NUM_SERVERS=$(wc -l < "$SERVERS")
+
+action=$1; shift
+case $action in
+  connect)
+    [[ -z $1 ]]
+    (( $1 > NUM_SERVERS || $1 <= 0 )) && { echo "Invalid server entry." >&2; exit 1; }
+    IFS='|' read user host port < <(sed -n "${1}{p;q;}" "$SERVERS")
+    ssh -t -p $port $user@$host
+  ;;
+
+  list)
+    printf "\n"
+    echo -e "  ${PINK}########   #######  ##     ## ########  ######  \n" \
+                    " ##     ## ##     ##  ##   ##  ##       ##    ## \n" \
+                    " ##     ## ##     ##   ## ##   ##       ##       \n" \
+                    " ########  ##     ##    ###    ######    ######  \n" \
+                    " ##     ## ##     ##   ## ##   ##             ## \n" \
+                    " ##     ## ##     ##  ##   ##  ##       ##    ## \n" \
+                    " ########   #######  ##     ## ########  ###### ${COLOFF}\n"
+    printf "%-7s ${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}\n" "No." "Username" "Hostname" "Port"
+    echo "-------------------------------------------------------------------"
+
+    if [[ $1 ]]; then
+      (( $1 > NUM_SERVERS || $1 <= 0 )) && { echo "Invalid server entry." >&2; exit 1; }
+      IFS='|' read user host port < <(sed -n "${1}{p;q;}" "$SERVERS")
+      printf "%-8s${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}\n" "$1" "$user" "$host" "$port"
+    else
+      while read entry; do
+        IFS='|' read user host port <<< "$entry"
+        [[ -z $user$host$port ]] && continue
+        printf "${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}\n" "$user" "$host" "$port"
+      done < "$SERVERS" | nl --number-format=ln
+    fi
+  ;;
+
+  add)
+    (( $# == 2 || $# == 3 )) || { echo "Usage: ${0##*/} add <user> <host> [port]" >&2; exit 1; }
+    echo "$1|$2|${3:-22}" >> "$SERVERS"
+  ;;
+
+  keyup)
+    if [[ -z $1 ]]; then
+      (( $1 > NUM_SERVERS || $1 <= 0 )) && { echo "Invalid server entry." >&2; exit 1; }
+      IFS='|' read user host port < <(sed -n "${1}{p;q;}" "$SERVERS")
+      ssh-copy-id "-t -p $port $user@$host"
+    else
+      while read box; do
+        IFS='|' read user host port <<< "$box"
+        [[ -z $user$host$port ]] && continue
+        echo -e "Sending key to ${YELLOW}$host..${COLOFF}"
+        ssh-copy-id "-t -p $port $user@$host"
+        echo -e "Key delivered to ${PINK}$host..${COLOFF}"
+      done < "$SERVERS"
+    fi
+    echo -e "${GREEN}FINISHED KEYING UP!${COLOFF}"
+  ;;
+
+  edit)
+    [[ $2 =~ user|host|port ]] || (( $# == 2 )) || { echo "Usage: ${0##*/} edit <user|host|port>" >&2; exit 1; }
+    (( $1 > NUM_SERVERS || $1 <= 0 )) && { echo "Invalid server entry." >&2; exit 1; }
+
+    echo "Altering entry: $(sed -n "${1}{p;q;}" "$SERVERS")"
+    read -p "Enter new $2: " entry
+    [[ -z $entry ]] && { echo "New entry is empty. Aborting..." >&2; exit 1; }
+    case $2 in
+      user) sed -i "$1s,^\([^|]\+\)|,$entry|," "$SERVERS" ;;
+      host) sed -i "$1s,|\([-[:alnum:]\.\_]\+\)|,|$entry|," "$SERVERS" ;;
+      port) sed -i "$1s,|[[:digit:]]\+$,|$entry," "$SERVERS" ;;
+    esac
+  ;;
+
+  remove)
+    (( $1 > NUM_SERVERS || $1 <= 0 )) && { echo "Usage: ${0##*/} remove <server-num>" >&2; exit 1; }
+    prompt='\e[0;31m Are you sure? \e[0;37m'
+    if ask_yesno "$prompt"; then
+      sed -i "${1}d" "$SERVERS"
+      echo -e "\e[0;31m Server removed from database.\e[0;37m"
+    else
+      echo "Canceling.."
+      exit 1
+    fi
+  ;;
+
+  search)
+    [[ -z $1 ]] && { echo "Usage: ${0##*/} search <pattern>" >&2; exit 1; }
+    while read ln user host port; do
+      [[ -z $user$host$port ]] && continue
+      printf "%-8s${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}\n" "$ln" "$user" "$host" "$port"
+    done < <(awk -F'|' "/$1/"'{ print NR,$1,$2,$3 }' "$SERVERS")
+  ;;
+
+  export)
+    while read entry; do
+      IFS='|' read user host port <<< "$entry"
+      printf "Host %s\n\tUser %s\n\tPort %s\n\n" "$host" "$user" "$port"
+    done < "$SERVERS"
+  ;;
+
+  *) [[ $action ]] && echo "Invalid action: '$action'"
+     echo "Valid actions are: connect  list  add  keyup  edit  remove  search  export" >&2
+     exit 1
+  ;;
+esac
