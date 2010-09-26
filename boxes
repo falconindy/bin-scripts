@@ -135,9 +135,19 @@ case $action in
   export) iterate_and export_to_ssh ;;
   search) iterate_and list <(awk -F'|' "/$1/"'{ print $1"|"$2"|"$3"|"NR }' "$SERVERS") ;;
 
-  *) [[ $action ]] && echo "Invalid action: '$action'"
-     echo "Valid actions are: connect  list  add  keyup  edit  remove  search  export" >&2
+  *) {
+     [[ $action ]] && echo "Invalid action: '$action'"
+     echo "Usage: "
+     echo "  connect <servernum>"
+     echo "  list [servernum]"
+     echo "  add <user> <host> [port]"
+     echo "  keyup <servernum>"
+     echo "  edit <servernum> <user|host|port>"
+     echo "  remove <servernum>"
+     echo "  search <pattern>"
+     echo "  export <servernum>"
      exit 1
+     } >&2
   ;;
 esac
 
