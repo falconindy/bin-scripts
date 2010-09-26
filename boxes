@@ -32,6 +32,37 @@ sed -i '/^[\t\ ]*$/d' "$SERVERS"
 
 NUM_SERVERS=$(wc -l < "$SERVERS")
 
+# utility dispatcher
+iterate_and() {
+  [[ $(type -t $1) = function ]] || return 1
+  while IFS='|' read user host port nl; do
+    $1 "$user" "$host" "$port" "$nl" # nl might not exist, so its last
+  done < "${2:-$SERVERS}"
+}
+
+export_to_ssh() {
+  local user=$1 host=$2 port=$3
+  printf "Host %s\n\tUser %s\n\tPort %s\n\n" "$host" "$user" "$port"
+}
+
+list() {
+  local user=$1 host=$2 port=$3 nl=$4
+  if [[ $4 ]]; then
+    printf "%-8s${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}\n" "$nl" "$user" "$host" "$port"
+  else
+    printf "${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}\n" "$user" "$host" "$port"
+  fi
+}
+
+keyup() {
+  local user=$1 host=$2 port=$3
+  [[ -z $user$host$port ]] && return
+  echo -ne "Sending key to ${YELLOW}$host...${COLOFF} "
+  ssh-copy-id "-p $port $user@$host" &>/dev/null &&
+    echo -e "${GREEN}Success${COLOFF}!" ||
+    echo -e "${PINK}Error${COLOFF}!"
+}
+
 action=$1; shift
 case $action in
   connect)
@@ -41,51 +72,18 @@ case $action in
     ssh -t -p $port $user@$host
   ;;
 
-  list)
-    printf "\n"
-    echo -e "  ${PINK}########   #######  ##     ## ########  ######  \n" \
-                    " ##     ## ##     ##  ##   ##  ##       ##    ## \n" \
-                    " ##     ## ##     ##   ## ##   ##       ##       \n" \
-                    " ########  ##     ##    ###    ######    ######  \n" \
-                    " ##     ## ##     ##   ## ##   ##             ## \n" \
-                    " ##     ## ##     ##  ##   ##  ##       ##    ## \n" \
-                    " ########   #######  ##     ## ########  ###### ${COLOFF}\n"
-    printf "%-7s ${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}\n" "No." "Username" "Hostname" "Port"
-    echo "-------------------------------------------------------------------"
-
-    if [[ $1 ]]; then
-      (( $1 > NUM_SERVERS || $1 <= 0 )) && { echo "Invalid server entry." >&2; exit 1; }
-      IFS='|' read user host port < <(sed -n "${1}{p;q;}" "$SERVERS")
-      printf "%-8s${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}\n" "$1" "$user" "$host" "$port"
-    else
-      while read entry; do
-        IFS='|' read user host port <<< "$entry"
-        [[ -z $user$host$port ]] && continue
-        printf "${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}\n" "$user" "$host" "$port"
-      done < "$SERVERS" | nl --number-format=ln
-    fi
-  ;;
-
   add)
     (( $# == 2 || $# == 3 )) || { echo "Usage: ${0##*/} add <user> <host> [port]" >&2; exit 1; }
     echo "$1|$2|${3:-22}" >> "$SERVERS"
   ;;
 
   keyup)
-    if [[ -z $1 ]]; then
+    if [[ $1 ]]; then
       (( $1 > NUM_SERVERS || $1 <= 0 )) && { echo "Invalid server entry." >&2; exit 1; }
-      IFS='|' read user host port < <(sed -n "${1}{p;q;}" "$SERVERS")
-      ssh-copy-id "-t -p $port $user@$host"
+      keyup $(sed "${1}s/|/ /g" "$SERVERS")
     else
-      while read box; do
-        IFS='|' read user host port <<< "$box"
-        [[ -z $user$host$port ]] && continue
-        echo -e "Sending key to ${YELLOW}$host..${COLOFF}"
-        ssh-copy-id "-t -p $port $user@$host"
-        echo -e "Key delivered to ${PINK}$host..${COLOFF}"
-      done < "$SERVERS"
+      iterate_and keyup
     fi
-    echo -e "${GREEN}FINISHED KEYING UP!${COLOFF}"
   ;;
 
   edit)
@@ -104,6 +102,7 @@ case $action in
 
   remove)
     (( $1 > NUM_SERVERS || $1 <= 0 )) && { echo "Usage: ${0##*/} remove <server-num>" >&2; exit 1; }
+    echo "Deleting entry: $(sed -n "${1}{p;q;}" "$SERVERS")"
     prompt='\e[0;31m Are you sure? \e[0;37m'
     if ask_yesno "$prompt"; then
       sed -i "${1}d" "$SERVERS"
@@ -114,23 +113,31 @@ case $action in
     fi
   ;;
 
-  search)
-    [[ -z $1 ]] && { echo "Usage: ${0##*/} search <pattern>" >&2; exit 1; }
-    while read ln user host port; do
-      [[ -z $user$host$port ]] && continue
-      printf "%-8s${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}\n" "$ln" "$user" "$host" "$port"
-    done < <(awk -F'|' "/$1/"'{ print NR,$1,$2,$3 }' "$SERVERS")
+  list)
+    echo -e "\n  ${PINK}########   #######  ##     ## ########  ###### \n" \
+                      " ##     ## ##     ##  ##   ##  ##       ##    ##\n" \
+                      " ##     ## ##     ##   ## ##   ##       ##      \n" \
+                      " ########  ##     ##    ###    ######    ###### \n" \
+                      " ##     ## ##     ##   ## ##   ##             ##\n" \
+                      " ##     ## ##     ##  ##   ##  ##       ##    ##\n" \
+                      " ########   #######  ##     ## ########  ######${COLOFF}\n"
+    printf "%-7s ${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}\n" "No." "Username" "Hostname" "Port"
+    echo "-------------------------------------------------------------------"
+
+    if [[ $1 ]]; then
+      (( $1 > NUM_SERVERS || $1 <= 0 )) && { echo "Invalid server entry." >&2; exit 1; }
+      list $(sed -n "${1}s/\(.*\)|\(.*\)|\(.*\)/\1 \2 \3/p" "$SERVERS")
+    else
+      iterate_and list
+    fi | nl --number-format=ln
   ;;
 
-  export)
-    while read entry; do
-      IFS='|' read user host port <<< "$entry"
-      printf "Host %s\n\tUser %s\n\tPort %s\n\n" "$host" "$user" "$port"
-    done < "$SERVERS"
-  ;;
+  export) iterate_and export_to_ssh ;;
+  search) iterate_and list <(awk -F'|' "/$1/"'{ print $1"|"$2"|"$3"|"NR }' "$SERVERS") ;;
 
   *) [[ $action ]] && echo "Invalid action: '$action'"
      echo "Valid actions are: connect  list  add  keyup  edit  remove  search  export" >&2
      exit 1
   ;;
 esac
+
