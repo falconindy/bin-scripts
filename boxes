@@ -133,7 +133,7 @@ case $action in
   ;;
 
   export) iterate_and export_to_ssh ;;
-  search) iterate_and list <(awk -F'|' "/$1/"'{ print $1"|"$2"|"$3"|"NR }' "$SERVERS") ;;
+  search) iterate_and list <(awk -F'|' "/$1/"'{ printf "%s|%s|%s|%d\n",$1,$2,$3,NR }' "$SERVERS") ;;
 
   *) {
      [[ $action ]] && echo "Invalid action: '$action'"
