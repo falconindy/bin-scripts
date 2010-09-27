@@ -47,11 +47,7 @@ export_to_ssh() {
 
 list() {
   local user=$1 host=$2 port=$3 nl=$4
-  if [[ $4 ]]; then
-    printf "%-8s${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}\n" "$nl" "$user" "$host" "$port"
-  else
-    printf "${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}\n" "$user" "$host" "$port"
-  fi
+  printf "${nl:+%-8s}${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}\n" $nl "$user" "$host" "$port"
 }
 
 keyup() {
