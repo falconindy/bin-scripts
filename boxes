@@ -35,8 +35,8 @@ NUM_SERVERS=$(wc -l < "$SERVERS")
 # utility dispatcher
 iterate_and() {
   [[ $(type -t $1) = function ]] || return 1
-  while IFS='|' read user host port nl; do
-    $1 "$user" "$host" "$port" "$nl" # nl might not exist, so its last
+  while IFS='|' read user host port group nl; do
+    $1 "$user" "$host" "$port" "${group/#\$\$/}""$nl" # nl might not exist, so its last
   done < "${2:-$SERVERS}"
 }
 
@@ -46,7 +46,7 @@ export_to_ssh() {
 }
 
 list() {
-  local user=$1 host=$2 port=$3 nl=$4
+  local user=$1 host=$2 port=$3 group=$4 nl=$5
   printf "${nl:+%-8s}${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}\n" $nl "$user" "$host" "$port"
 }
 
@@ -69,21 +69,25 @@ case $action in
   ;;
 
   add)
-    (( $# == 2 || $# == 3 )) || { echo "Usage: ${0##*/} add <user> <host> [port]" >&2; exit 1; }
-    echo "$1|$2|${3:-22}" >> "$SERVERS"
+    (( $# < 2 || $# > 4 )) || { echo "Usage: ${0##*/} add <user> <host> [port] [group]" >&2; exit 1; }
+    echo "$1|$2|${3:-22}|${4:-\$\$}" >> "$SERVERS"
   ;;
 
   keyup)
     if [[ $1 ]]; then
-      (( $1 > NUM_SERVERS || $1 <= 0 )) && { echo "Invalid server entry." >&2; exit 1; }
-      keyup $(sed "${1}s/|/ /g" "$SERVERS")
+      if [[ -z ${1//[[:digit:]]} ]]; then # strictly numerical
+        (( $1 > NUM_SERVERS || $1 <= 0 )) && { echo "Invalid server entry." >&2; exit 1; }
+        keyup $(sed "${1}s/|/ /g" "$SERVERS")
+      else # must be a group
+        iterate_and keyup < <(sed -n "/|$1\$/p" "$SERVERS")
+      fi
     else
       iterate_and keyup
     fi
   ;;
 
   edit)
-    [[ $2 =~ user|host|port ]] || (( $# == 2 )) || { echo "Usage: ${0##*/} edit <user|host|port>" >&2; exit 1; }
+    [[ $2 =~ user|host|port|group ]] || (( $# == 2 )) || { echo "Usage: ${0##*/} edit <user|host|port|group>" >&2; exit 1; }
     (( $1 > NUM_SERVERS || $1 <= 0 )) && { echo "Invalid server entry." >&2; exit 1; }
 
     echo "Altering entry: $(sed -n "${1}{p;q;}" "$SERVERS")"
@@ -92,7 +96,8 @@ case $action in
     case $2 in
       user) sed -i "$1s,^\([^|]\+\)|,$entry|," "$SERVERS" ;;
       host) sed -i "$1s,|\([-[:alnum:]\.\_]\+\)|,|$entry|," "$SERVERS" ;;
-      port) sed -i "$1s,|[[:digit:]]\+$,|$entry," "$SERVERS" ;;
+      port) sed -i "$1s,|[[:digit:]]\+|,|$entry|," "$SERVERS" ;;
+     group) sed -i "$1s,|[^|]\+\$,|$entry," "$SERVERS" ;;
     esac
   ;;
 
@@ -121,8 +126,12 @@ case $action in
     echo "-------------------------------------------------------------------"
 
     if [[ $1 ]]; then
-      (( $1 > NUM_SERVERS || $1 <= 0 )) && { echo "Invalid server entry." >&2; exit 1; }
-      list $(sed -n "${1}s/\(.*\)|\(.*\)|\(.*\)/\1 \2 \3/p" "$SERVERS")
+      if [[ -z ${1//[[:digit:]]} ]]; then # strictly numerical
+        (( $1 > NUM_SERVERS || $1 <= 0 )) && { echo "Invalid server entry." >&2; exit 1; }
+        list $(sed -n "${1}s/\(.*\)|\(.*\)|\(.*\)/\1 \2 \3/p" "$SERVERS")
+      else # must be a group
+        iterate_and list <(sed -n "/|$1\$/p" "$SERVERS")
+      fi
     else
       iterate_and list
     fi | nl --number-format=ln
