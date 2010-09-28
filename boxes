@@ -36,7 +36,7 @@ NUM_SERVERS=$(wc -l < "$SERVERS")
 iterate_and() {
   [[ $(type -t $1) = function ]] || return 1
   while IFS='|' read user host port group nl; do
-    $1 "$user" "$host" "$port" "${group/#\$\$/}""$nl" # nl might not exist, so its last
+    $1 "$user" "$host" "$port" "${group/#\$\$/}" "$nl" # nl might not exist, so its last
   done < "${2:-$SERVERS}"
 }
 
@@ -47,7 +47,7 @@ export_to_ssh() {
 
 list() {
   local user=$1 host=$2 port=$3 group=$4 nl=$5
-  printf "${nl:+%-8s}${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}\n" $nl "$user" "$host" "$port"
+  printf "${nl:+%-8s}${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}   %-12s\n" $nl "$user" "$host" "$port" "$group"
 }
 
 keyup() {
@@ -122,8 +122,8 @@ case $action in
                       " ##     ## ##     ##   ## ##   ##             ##\n" \
                       " ##     ## ##     ##  ##   ##  ##       ##    ##\n" \
                       " ########   #######  ##     ## ########  ######${COLOFF}\n"
-    printf "%-7s ${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}\n" "No." "Username" "Hostname" "Port"
-    echo "-------------------------------------------------------------------"
+    printf "%-7s ${YELLOW}%-15s${COLOFF} ${WHITE}%-35s${COLOFF} ${TEAL}%6s${COLOFF}   %-12s\n" "No." "Username" "Hostname" "Port" "Group"
+    echo "-------------------------------------------------------------------------------"
 
     if [[ $1 ]]; then
       if [[ -z ${1//[[:digit:]]} ]]; then # strictly numerical
@@ -138,7 +138,7 @@ case $action in
   ;;
 
   export) iterate_and export_to_ssh ;;
-  search) iterate_and list <(awk -F'|' "/$1/"'{ printf "%s|%s|%s|%d\n",$1,$2,$3,NR }' "$SERVERS") ;;
+  search) iterate_and list <(awk -F'|' "/$1/"'{ printf "%s|%s|%s|%s|%d\n",$1,$2,$3,$4,NR }' "$SERVERS") ;;
 
   *) {
      [[ $action ]] && echo "Invalid action: '$action'"
