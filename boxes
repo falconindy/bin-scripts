@@ -128,13 +128,13 @@ case $action in
     if [[ $1 ]]; then
       if [[ -z ${1//[[:digit:]]} ]]; then # strictly numerical
         (( $1 > NUM_SERVERS || $1 <= 0 )) && { echo "Invalid server entry." >&2; exit 1; }
-        list $(sed -n "${1}s/\(.*\)|\(.*\)|\(.*\)/\1 \2 \3/p" "$SERVERS")
+        list $(awk -F'|' 'NR == '$1'{print $1,$2,$3,$4,NR }' "$SERVERS")
       else # must be a group
-        iterate_and list <(sed -n "/|$1\$/p" "$SERVERS")
+        iterate_and list <(awk '/\|'$1'$/{ print $0,"|",NR }' "$SERVERS")
       fi
     else
-      iterate_and list
-    fi | nl --number-format=ln
+      iterate_and list | nl --number-format=ln
+    fi
   ;;
 
   export) iterate_and export_to_ssh ;;
