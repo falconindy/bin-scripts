@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# indent size
+IND_SZ=3
+
+walk() {
+  pushd "$1" &>/dev/null
+  for entry in *; do
+    if [[ -d $entry ]]; then
+      printf "%*s \e[0;34m%s\e[0m\n" "$indent" "" "$entry/"
+      (( indent += IND_SIZ ))
+      walk "$entry"
+    else
+      printf "% *s %s\n" "$indent" "" "$entry"
+    fi
+  done
+  (( indent -= IND_SZ ))
+  popd &>/dev/null
+}
+
+basedir=${1:-.}
+
+cd "$basedir" 2>/dev/null || { echo "Directory not found: '$basedir'" >&2; exit 1; }
+
+indent=$IND_SZ
+echo "$basedir"
+walk "$basedir"
