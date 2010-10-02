@@ -1,7 +1,10 @@
 #!/bin/bash
 
+shopt -s nullglob
+
 # indent size
 IND_SZ=3
+DIRS_FIRST=
 
 get_pwd_contents() {
   local dir nondir
@@ -14,11 +17,13 @@ get_pwd_contents() {
 }
 
 walk() {
+  local dir_contents
   printf "%*s\e[0;34m%s\e[0m\n" "$indent" "" "$1"
 
   (( indent += $IND_SZ ))
   pushd "$1" &>/dev/null
 
+  [[ $DIRS_FIRST ]] && dir_contents=$(get_pwd_contents) || dir_contents=(*)
   for entry in $(get_pwd_contents); do
     [[ -d $entry ]] && walk "$entry" || printf "%*s%s\n" "$indent" "" "$entry"
   done
@@ -27,9 +32,18 @@ walk() {
   popd &>/dev/null
 }
 
-basedir=${1:-.}
-
-cd "$basedir" 2>/dev/null || { echo "Directory not found: '$basedir'" >&2; exit 1; }
+while getopts "d" opt; do
+  case $opt in
+    d) DIRS_FIRST=1 ;;
+  esac
+done
+shift $(( OPTIND - 1 ))
 
 indent=0
-walk "$basedir"
+(( $# == 0 )) && DIRS=(.) || DIRS=($@)
+
+for basedir in "${DIRS[@]}"; do
+  cd "$basedir" 2>/dev/null || { echo "Directory not found: '$basedir'" >&2; continue; }
+  walk "$basedir"
+done
+
