@@ -6,6 +6,10 @@ shopt -s nullglob
 IND_SZ=3
 DIRS_FIRST=
 
+printentry() {
+  printf "%*s%s\n" "$indent" "" "$1"
+}
+
 get_pwd_contents() {
   local dir nondir
 
@@ -18,14 +22,14 @@ get_pwd_contents() {
 
 walk() {
   local dir_contents
-  printf "%*s\e[0;34m%s\e[0m\n" "$indent" "" "$1"
+  printentry "$(printf "\e[0;34m%s\e[0m" "$1")"
 
   (( indent += $IND_SZ ))
   pushd "$1" &>/dev/null
 
   [[ $DIRS_FIRST ]] && dir_contents=$(get_pwd_contents) || dir_contents=(*)
   for entry in $(get_pwd_contents); do
-    [[ -d $entry ]] && walk "$entry" || printf "%*s%s\n" "$indent" "" "$entry"
+    [[ -d $entry ]] && walk "$entry" || printentry "$entry"
   done
 
   (( indent -= IND_SZ ))
