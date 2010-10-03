@@ -13,12 +13,12 @@ read remote_head _ < <(git ls-remote $ORIGIN HEAD 2>/dev/null)
 n=$(sed -n "/$remote_head/=" <(git rev-list --all))
 
 if [[ ! $n ]]; then
-  echo "remote > local"
+  echo "the remote appears to be ahead of the local"
 elif (( n == 1 )); then
-  echo "nothing to commit"
+  echo "nothing outgoing"
 else
   (( n-- ))
-  echo "Outstanding commits:"
+  echo "Outgoing commits:"
   git --no-pager log --pretty=oneline HEAD~$n..
 
 fi
