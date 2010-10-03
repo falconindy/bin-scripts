@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#
+# emulates the 'tree' utility
+#
+
 shopt -s nullglob
 
 # indent size
