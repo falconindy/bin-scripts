@@ -10,7 +10,7 @@ COOKIEFILE=~/.config/jumanji/cookies
 
 (( $# == 0 )) && exit
 src=$1
-dst=${2:-$HOME/${src##*/}}
+dst=$(zenity --file-selection --filename="$DEFAULT_DIR/${src##*/}" --directory --save)
 
 # progs: less likely you'll want to change these
 WGET=$(type -P wget)
@@ -27,7 +27,7 @@ trap 'trap_exit' HUP INT EXIT
 
 # it's not possible to tie wget directly to zenity because we need wget's PID
 # in order to kill it when the cancel button is pressed on the zenity dialog.
-[[ ! -p $WGETFIFO ]] && mkfifo $WGETFIFO
+[[ ! -p $WGETFIFO ]] && { mkfifo $WGETFIFO || exit 2; }
 
 "${WGETCMD[@]}" "$@" &> "$WGETFIFO" &
 wgetpid=$!
