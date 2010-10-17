@@ -1,5 +1,16 @@
 #!/bin/bash
 
+QUIET=0
+
+while getopts 'q' opt; do
+  case $opt in
+    q) QUIET=1 ;;
+  esac
+done
+
+# quiet down when stdout isn't opened to the tty
+[[ -t 1 ]] || QUIET=1
+
 for package in $(pacman -Qqm); do
   pkg=($(awk '/^Version/{print $3} /^Provides/{ for(i=3;i<=NF;i++) print $i };' <(pacman -Qi $package)))
 
@@ -12,8 +23,13 @@ for package in $(pacman -Qqm); do
     [[ -z ${pacver} || ${pacver%-*} == ${pkg[0]%-*} ]] && continue
 
     vercmp=$(vercmp ${pacver} ${pkg[0]})
-    (( vercmp > 0 )) && echo -e "$package [${provide}] \033[1;31m${pkg[0]}\033[1;0m -> \033[1;32m${pacver}\033[1;0m"
-
+    if (( vercmp > 0 )); then
+      if (( QUIET )); then
+        echo $package
+      else
+        echo -e "$package [${provide}] \033[1;31m${pkg[0]}\033[1;0m -> \033[1;32m${pacver}\033[1;0m"
+      fi
+    fi
   done
 done
 
