@@ -34,7 +34,7 @@ die() {
 }
 
 mkdir_vp() {
-  mkdir -p "$1" && info "$ARG0: created directory ``$1'"
+  mkdir -p "$1" && echo "$ARG0: created directory ``$1'"
 }
 
 usage() {
