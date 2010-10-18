@@ -1,0 +1,23 @@
+#!/bin/bash
+
+#
+# http://man.cx manpage extractor
+# requires: xmllint (libxml2)
+#
+
+BASEURL='http://man.cx'
+XMLLINT='xmllint --html'
+XPATH_EXPR='--xpath //*[@id="manpage"]/pre'
+
+usage() {
+  echo "Usage: ${0##*/} [section] manpage" >&2
+}
+
+case $# in
+  1) PAGE=$1 ;;
+  2) SECTION="($1)"
+     PAGE=$2 ;;
+  *) usage; exit 1 ;;
+esac
+
+$XMLLINT $XPATH_EXPR <(curl -s $BASEURL/$PAGE$SECTION) 2>/dev/null | sed 's|</\?[^>]\+>||g;s|&lt\;|<|g;s|&gt\;|>|g' | ${PAGER:-less}
