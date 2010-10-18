@@ -102,12 +102,11 @@ if [[ -z $DEST ]]; then
   args=("${@:1:(( $# - 1 ))}")
 fi
 
-# sanity check
-#if (( ${#args[@]} > 1 )) && [[ ! -d $DEST ]]; then
-#  die "error: $DEST is not a valid destination directory"
-#fi
-
+# all but the last part of the dest needs to exist
 fulldest=$(readlink -f "$DEST")
+if [[ -z $fulldest ]]; then
+  die "error: cannot create directory \`$DEST': No such file or directory"
+fi
 
 # main loop
 for arg in "${args[@]}"; do
