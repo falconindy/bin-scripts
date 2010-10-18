@@ -6,7 +6,7 @@
 #
 
 ARG0=${0##*/}
-TAGVARS=(artist title album date tracknumber genre)
+TAGVARS=(album artist date genre title tracknumber)
 
 # runtime options
 FORCE=0
@@ -23,15 +23,11 @@ warn() {
   (( QUITONWARN )) && exit 1
 } >&2
 
-err() {
+die() {
   local mesg=$1; shift
   printf '\e[1;31m:: \e[0m%s\n' "$mesg"
-} >&2
-
-die() {
-  err "$@"
   exit 1
-}
+} >&2
 
 mkdir_vp() {
   mkdir -p "$1" && echo "$ARG0: created directory ``$1'"
@@ -117,7 +113,7 @@ fulldest=$(readlink -f "$DEST")
 for arg in "${args[@]}"; do
   if [[ -d $arg ]]; then
     # only handle directories if -r was passed
-    (( ! RECURSE )) && { warn "$ARG0: omitting directory \`$arg'"; continue; }
+    (( ! RECURSE )) && { warn "warning: omitting directory \`$arg'"; continue; }
     IFS=$'\n' read -d'\0' -r -a flacs < <(expand_dir "$arg")
   else
     flacs=$arg
@@ -133,7 +129,7 @@ for arg in "${args[@]}"; do
       # possibility of a superfluous trailing slash
       outfile=$fulldest/$(basename "$arg")/${flac#$arg}
       if [[ ! -d ${outfile%/*} ]]; then
-        mkdir_vp "${outfile%/*}" || die "error: failed to create dest dir"
+        mkdir_vp "${outfile%/*}" || die "error: failed to create directory \`${outfile%/*}'"
       fi
     else
       outfile=$DEST/${flac##*/}
