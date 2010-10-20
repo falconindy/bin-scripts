@@ -20,4 +20,8 @@ case $# in
   *) usage; exit 1 ;;
 esac
 
-$XMLLINT $XPATH_EXPR <(curl -s $BASEURL/$PAGE$SECTION) 2>/dev/null | sed 's|</\?[^>]\+>||g;s|&lt\;|<|g;s|&gt\;|>|g' | ${PAGER:-less}
+man $SECITON $PAGE
+(( $? == 0 )) && exit 0
+
+manpage=$(curl -s $BASEURL/$PAGE$SECTION | $XMLLINT $XPATH_EXPR - 2>/dev/null | sed 's|</\?[^>]\+>||g;s|&lt\;|<|g;s|&gt\;|>|g')
+[[ $manpage ]] && "${PAGER:-less}" <<< "$manpage" || echo "No mancx entry for $PAGE"
