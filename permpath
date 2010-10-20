@@ -1,7 +1,7 @@
 #!/bin/bash
 # list directory permissions along the path
 
-target="${1:-$(pwd)}"
+target="${1:-$PWD}"
 
 if [[ ! -e $target ]]; then
   echo "${0##*/}: cannot stat \`$target': No such file or directory"
@@ -14,3 +14,4 @@ for part in "${dirpath[@]}"; do
   working+="$part/"
   stat $working --printf "%A %U %G %n\n"
 done | column -t
+
