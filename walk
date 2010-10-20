@@ -33,7 +33,7 @@ walk() {
 
   [[ $DIRS_FIRST ]] && dir_contents=$(get_pwd_contents) || dir_contents=(*)
   for entry in $(get_pwd_contents); do
-    [[ -d $entry ]] && walk "$entry" || printentry "$entry"
+    [[ -d $entry && ! -L $entry ]] && walk "$entry" || printentry "$entry"
   done
 
   (( indent -= IND_SZ ))
