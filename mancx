@@ -21,8 +21,8 @@ case $# in
   *) usage; exit 1 ;;
 esac
 
-man $SECTION $PAGE 2>/dev/null
-(( $? == 0 )) && exit 0
+# if found locally, exit
+man ${SECTION//[^[:digit:]]/} $PAGE 2>/dev/null && exit
 
 manpage=$(curl -s $BASEURL/$PAGE$SECTION | $XMLLINT --xpath "$XPATH_EXPR" - 2>/dev/null | sed "$DETAG")
 [[ $manpage ]] && "${PAGER:-less}" <<< "$manpage" || echo "No mancx entry for $PAGE"
