@@ -7,7 +7,7 @@
 
 BASEURL='http://man.cx'
 XMLLINT='xmllint --html'
-XPATH_EXPR='//*[@id="manpage"]/pre | //*[@id="manpage"]/h3'
+XPATH_EXPR='//*[@id="manpage"]/*[self::pre or self::h3]'
 DETAG='$d;s|</\?[^>]\+>||g;s|&lt\;|<|g;s|&gt\;|>|g'
 
 usage() {
