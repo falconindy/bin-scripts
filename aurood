@@ -2,14 +2,15 @@
 
 QUIET=0
 
-while getopts 'q' opt; do
+while getopts 'cq' opt; do
   case $opt in
+    c) CRON=1 ;;
     q) QUIET=1 ;;
   esac
 done
 
 # quiet down when stdout isn't opened to the tty
-[[ -t 1 ]] || QUIET=1
+(( ! CRON )) && { [[ -t 1 ]] || QUIET=1; }
 
 for package in $(pacman -Qqm); do
   pkg=($(awk '/^Version/{print $3} /^Provides/{ for(i=3;i<=NF;i++) print $i };' <(pacman -Qi $package)))
