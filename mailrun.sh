@@ -1,9 +1,5 @@
 #!/bin/sh
 
-PID=`pgrep offlineimap`
-
-[ -n "$PID" ] && exit 1
-
-offlineimap -o -u Noninteractive.Quiet &>/dev/null &
+pgrep offlineimap || offlineimap -o -u Noninteractive.Quiet &
 
 exit 0
