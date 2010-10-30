@@ -21,7 +21,7 @@ case $# in
   *) usage; exit 1 ;;
 esac
 
-man $SECITON $PAGE 2>/dev/null
+man $SECTION $PAGE 2>/dev/null
 (( $? == 0 )) && exit 0
 
 manpage=$(curl -s $BASEURL/$PAGE$SECTION | $XMLLINT --xpath "$XPATH_EXPR" - 2>/dev/null | sed "$DETAG")
