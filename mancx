@@ -7,7 +7,8 @@
 
 BASEURL='http://man.cx'
 XMLLINT='xmllint --html'
-XPATH_EXPR='--xpath //*[@id="manpage"]/pre'
+XPATH_EXPR='//*[@id="manpage"]/pre | //*[@id="manpage"]/h3'
+DETAG='$d;s|</\?[^>]\+>||g;s|&lt\;|<|g;s|&gt\;|>|g'
 
 usage() {
   echo "Usage: ${0##*/} [section] manpage" >&2
@@ -20,8 +21,8 @@ case $# in
   *) usage; exit 1 ;;
 esac
 
-man $SECITON $PAGE
+man $SECITON $PAGE 2>/dev/null
 (( $? == 0 )) && exit 0
 
-manpage=$(curl -s $BASEURL/$PAGE$SECTION | $XMLLINT $XPATH_EXPR - 2>/dev/null | sed 's|</\?[^>]\+>||g;s|&lt\;|<|g;s|&gt\;|>|g')
+manpage=$(curl -s $BASEURL/$PAGE$SECTION | $XMLLINT --xpath "$XPATH_EXPR" - 2>/dev/null | sed "$DETAG")
 [[ $manpage ]] && "${PAGER:-less}" <<< "$manpage" || echo "No mancx entry for $PAGE"
