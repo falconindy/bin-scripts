@@ -1,0 +1,5 @@
+#!/bin/bash
+
+CURRENT=$(git branch | sed -n '/^\*/s/\* \(.*\)/\1/p')
+
+git --no-pager log --pretty=oneline origin/$CURRENT..HEAD
