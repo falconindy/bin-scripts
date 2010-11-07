@@ -13,12 +13,14 @@ trap_exit() {
 trap 'trap_exit' 0 TERM HUP QUIT INT
 
 cat > "$SRC" << EOF
+#define _GNU_SOURCE
+#include <fcntl.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 int main(int argc, char *argv[]) {
   $@
