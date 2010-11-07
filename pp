@@ -50,5 +50,5 @@ if [[ ${manifest[@]} ]]; then
 fi
 
 aria2c --dir "$PACCACHE" -i - < <(for pkg in "${manifest[@]}"; do echo "$pkg"; done)
-(( DL_ONLY )) || pacman -U $(for pkg in "${pkgs[@]}"; do echo "$PACCACHE/${pkg##*/}"; done)
+(( DL_ONLY )) || pacman "$@"
 
