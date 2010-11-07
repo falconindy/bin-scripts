@@ -92,7 +92,7 @@ job_summary() {
   else
     for repo in "${fail[@]}"; do
       repofail "$repo"
-      { (( VERBOSE )) && sed 's/^/   /' <<< "${output[$repo]}" && echo; } >&2
+      (( VERBOSE )) && { sed 's/^/   /' <<< "${output[$repo]}"; echo; } >&2
     done
   fi
   echo
