@@ -49,6 +49,13 @@ if [[ ${manifest[@]} ]]; then
   done
 fi
 
+# filthy. strip out any -y option
+ARGS=()
+for arg; do
+  [[ $arg = -*y* ]] && arg=${arg//y/}
+  ARGS+=("$arg")
+done
+
 aria2c --dir "$PACCACHE" -i - < <(for pkg in "${manifest[@]}"; do echo "$pkg"; done)
-(( DL_ONLY )) || pacman "$@"
+(( DL_ONLY )) || pacman "${ARGS[@]}"
 
