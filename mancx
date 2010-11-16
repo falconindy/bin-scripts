@@ -14,6 +14,18 @@ usage() {
   echo "Usage: ${0##*/} [section] manpage" >&2
 }
 
+# less gets color, else its a NOOP
+if [[ ${PAGER:-less} = less ]]; then
+  colorify() {
+    sed '/^[[:upper:][:blank:]]\+$/{
+      s/^/'"$LESS_TERMCAP_md"'/
+      s/$/'"$LESS_TERMCAP_ue"'/
+    }'
+  }
+else
+  colorify() { cat; }
+fi
+
 case $# in
   1) PAGE=$1 ;;
   2) SECTION="($1)"
@@ -24,5 +36,5 @@ esac
 # if found locally, exit
 man ${SECTION//[^[:digit:]]/} $PAGE 2>/dev/null && exit
 
-manpage=$(curl -s $BASEURL/$PAGE$SECTION | $XMLLINT --xpath "$XPATH_EXPR" - 2>/dev/null | sed "$DETAG")
+manpage=$(curl -s $BASEURL/$PAGE$SECTION | $XMLLINT --xpath "$XPATH_EXPR" - 2>/dev/null | sed "$DETAG" | colorify)
 [[ $manpage ]] && "${PAGER:-less}" <<< "$manpage" || echo "No mancx entry for $PAGE"
