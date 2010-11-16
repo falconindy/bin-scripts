@@ -1,0 +1,74 @@
+#!/bin/bash
+
+#
+# generate links to hgweb based on a file name and optional commit hash
+# optional dependency: curl (for link validation)
+#
+
+LINE=
+OPENINBROWSER=0
+
+get_hgroot() {
+  curpath=${1:-$PWD}
+  while [[ $curpath && ! -d $curpath/.hg ]]; do
+    curpath=${curpath%/*}
+  done
+  [[ $curpath ]] && echo "$curpath"
+}
+
+usage() {
+ echo "Usage: ${0##*/} [ -l linenum ] [ -b ] <file> [ hash ]"
+} >&2
+
+while getopts ":bhl:" opt; do
+  case $opt in
+    b) OPENINBROWSER=1 ;;
+    h) usage; exit 1 ;;
+    l) LINE=$OPTARG ;;
+    \:) echo "Argument required for -$OPTARG" ;;
+    \?) echo "error: bad arg, no bisuit" ;;
+  esac >&2
+done
+shift $(( OPTIND - 1 ))
+
+(( $# )) || { usage; exit 1; }
+
+fullpath=$(readlink -m "$1")
+hg_root=$(get_hgroot "$fullpath")
+[[ -z $hg_root ]] && { echo "error: '$1' is not in an hg repo"; exit 1; }
+
+# we need to operate from within the hg repo. if we're not in it, go there
+[[ ${PWD#$hg_root} = $PWD ]] && cd $hg_root
+
+# where do we push to by default?
+remotepath=$(hg paths | awk -F' *= *' '/default/{ print $2 }')
+
+# commit hash to use -- hg provides no direct way (that i know of) to read the
+# remote's tip, so this is a filthy rotten hack in place of it
+remotetip=$(hg summ --remote | awk '/parent:/ { sub(/:.*/, "", $2); tip=$2 }
+                                    /remote:/ { outgoing=$2 }
+                                    END { print tip - outgoing }')
+rev=${2:-$(hg log -r $remotetip | awk -F: 'NR == 1 { print $3 }')}
+
+# relative path from repo root to file
+relpath=${fullpath#$hg_root/}
+if [[ -z $relpath ]]; then
+  echo "error: failed to determine path to $1. tell dave he sucks at bash"
+  exit 1
+fi
+
+# the build URL, appending a line anchor if provided
+urlout="${remotepath}/file/$rev/$relpath${LINE:+#l$LINE}"
+
+# if curl is installed...
+if type -P curl >/dev/null; then
+  # hgweb kindly responds with a 404 on an invalid link -- so let's validate!
+  if ! curl -sf "$urlout" >/dev/null; then
+    echo "error: failed to create a valid link to '$1'. check your repo and filepath"
+    exit 1
+  fi
+fi
+
+# echo or open in browser
+(( OPENINBROWSER )) && ${BROWSER:-chromium} "$urlout" || echo "$urlout"
+
