@@ -1,0 +1,49 @@
+#!/bin/bash
+
+#
+# retreive aur comments for a package
+#   - package name can be specified or pulled from a PKGBUILD in $PWD
+#   - specify -a to show all comments
+#
+
+AURURL="http://aur.archlinux.org"
+ALL='&comments=all'
+printf -v CON '\e[1;34m'
+printf -v COFF '\e[0m'
+
+commfilter() {
+  xmllint --html --xpath \
+    '//div[@class="pgbox"]/div[@class="comment-header"]/..' - 2>/dev/null |\
+    sed 's/<[^>]\+>//g;s/\t//g;
+        /Comment by:/,/[[:alnum:]]\+/{/^$/d};
+        s/^\(Comment by:.*\)$/'"$CON"'\1'"$COFF"'/'
+
+    # line 1: strip html tags
+    # line 2: strip empty lines between timestamp and body
+    # line 3: add color
+}
+
+getpkgID() {
+  curl -s "$AURURL/rpc.php?type=info&arg=$1" | awk '
+    BEGIN  { RS=","; FS=":" }
+    /type/ { if ($2 ~ /error/) exit }
+    /ID/   { gsub(/\"/, "", $3); print $3; exit }'
+}
+
+[[ $1 = -a ]] && { showall=$ALL; shift; }
+
+if ! (( $# )); then
+  if [[ ! -f PKGBUILD ]]; then 
+    echo "error: no PKGBUILD found and no arg provided"
+    exit 1
+  fi
+  eval $(grep '^pkgname=' PKGBUILD)
+fi
+
+pkgname=${1:-$pkgname}
+
+pkgID=$(getpkgID $pkgname)
+[[ $pkgID ]] || { echo "error: package \`$pkgname' not found"; exit 1; }
+
+curl -s "$AURURL/packages.php?ID=$pkgID$showall" | commfilter
+
