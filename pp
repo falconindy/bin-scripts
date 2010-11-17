@@ -21,7 +21,7 @@ while getopts 'DQRSTUVb:cdefghiklmnopqr:stuvwy' opt; do
   esac
 done
 
-(( !(SYNC && !BORING_OPT) )) && exec pacman $@
+(( !SYNC || BORING_OPT )) && exec pacman $@
 
 (( UID != 0 )) && { echo "Must be root!"; exit 1; } >&2
 
