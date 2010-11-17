@@ -4,6 +4,8 @@
 # diff an AUR pkgbuild based on your local copy
 #
 
+DIFF=${DIFF:-diff}
+
 if [[ ! -f PKGBUILD ]]; then
   echo "error: No PKGBUILD found in working directory."
   exit 1
@@ -15,4 +17,4 @@ if [[ -z $pkgname ]]; then
   exit 1
 fi >&2
 
-diff -u PKGBUILD <(curl -s "http://aur.archlinux.org/packages/$pkgname/$pkgname/PKGBUILD")
+diff ${@:--u} PKGBUILD <(curl -s "http://aur.archlinux.org/packages/$pkgname/$pkgname/PKGBUILD")
