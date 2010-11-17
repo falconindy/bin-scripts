@@ -14,13 +14,14 @@ printf -v COFF '\e[0m'
 commfilter() {
   xmllint --html --xpath \
     '//div[@class="pgbox"]/div[@class="comment-header"]/..' - 2>/dev/null |\
-    sed 's/<[^>]\+>//g;s/\t//g;
+    sed 's/<[^>]\+>//g;s/\t//g;s/\r$//
         /Comment by:/,/[[:alnum:]]\+/{/^$/d};
         s/^\(Comment by:.*\)$/'"$CON"'\1'"$COFF"'/'
 
-    # line 1: strip html tags
+    # line 1: strip html tags, remove tabs and ^M
     # line 2: strip empty lines between timestamp and body
     # line 3: add color
+
 }
 
 getpkgID() {
