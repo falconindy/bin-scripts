@@ -16,11 +16,13 @@ commfilter() {
     '//div[@class="pgbox"]/div[@class="comment-header"]/..' - 2>/dev/null |\
     sed 's/<[^>]\+>//g;s/\t//g;s/\r$//
         /Comment by:/,/[[:alnum:]]\+/{/^$/d};
+        s/&gt;/>/g;s/&lt;/</g;
         s/^\(Comment by:.*\)$/'"$CON"'\1'"$COFF"'/'
 
     # line 1: strip html tags, remove tabs and ^M
     # line 2: strip empty lines between timestamp and body
-    # line 3: add color
+    # line 3: decode HTML
+    # line 4: add color
 
 }
 
