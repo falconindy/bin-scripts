@@ -27,7 +27,7 @@ commfilter() {
 }
 
 getpkgID() {
-  curl -s "$AURURL/rpc.php?type=info&arg=$1" | awk '
+  curl -Gs --data-urlencode "arg=$1" "$AURURL/rpc.php?type=info" | awk '
     BEGIN  { RS=","; FS=":" }
     /type/ { if ($2 ~ /error/) exit }
     /ID/   { gsub(/\"/, "", $3); print $3; exit }'
