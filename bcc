@@ -14,6 +14,7 @@ trap 'trap_exit' 0 TERM HUP QUIT INT
 
 cat > "$SRC" << EOF
 #define _GNU_SOURCE
+#include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
