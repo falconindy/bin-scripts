@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#
+# raw json fetcher for the AUR
+#
+
+out() {
+  type -p json_reformat >/dev/null && json_reformat || cat
+}
+
+case $# in
+  1) qtype=info arg=$1 ;;
+  2) qtype=$1 arg=$2 ;;
+  *) exit 1 ;;
+esac
+
+[[ $qtype = @(info|?(m)search) ]] || exit 2
+
+curl -s "http://aur.archlinux.org/rpc.php?type=$qtype&arg=$arg" | out
+
