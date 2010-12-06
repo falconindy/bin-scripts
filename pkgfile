@@ -18,16 +18,18 @@ createfileball() {
   [[ -f repos.files.tar.gz ]] && rm repos.files.tar.gz
   mkdir -p {testing,core,extra,community{,-testing}}
 
+  echo -n "Downloading and extracting repo tarballs... "
   for repo in "${repos[@]}"; do
-    echo -n "Downloading and extracting $repo... "
+    (
     curl -s "${mirror/\$repo/$repo/}/$repo.files.tar.gz" | tar -xz --wildcards -C $repo '*/files'
-    pushd $repo >/dev/null
+    cd $repo >/dev/null
     for dir in *; do
       mv "$dir" "${dir%-*-*}"
     done
-    popd >/dev/null
-    echo "done!"
+    ) &
   done
+  wait
+  echo "done!"
 
   echo -n "Creating master file tarball... "
   tar czf repos.files.tar.gz *
