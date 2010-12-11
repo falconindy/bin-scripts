@@ -16,5 +16,5 @@ esac
 
 [[ $qtype = @(info|?(m)search) ]] || exit 2
 
-curl -s "http://aur.archlinux.org/rpc.php?type=$qtype&arg=$arg" | out
+curl -Ls "http://aur.archlinux.org/rpc.php?type=$qtype&arg=$arg" | out
 
