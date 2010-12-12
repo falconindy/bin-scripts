@@ -49,7 +49,7 @@ whoowns() {
   local needle="${1//\//\\/}"
   tar -Oxvf "$CACHEDIR/repos.files.tar.gz" |& awk '/%FILES%/{ pkg = prev; next }
                                                    { sub("/files", ""); prev = $0 }
-                                                   /'"$needle"'/{ printf "%-20s %s\n",pkg,$0 }'
+                                                   /'"$needle"'[^\/]+$/{ printf "%-30s %s\n",pkg,$0 }'
 }
 
 [[ $1 ]] || exit 1
@@ -71,6 +71,6 @@ if [[ $1 = -l ]]; then
 
   dumpcontents "$repo" "$pkg" 2>/dev/null
 else
-  whoowns "$1" 2>/dev/null
+  whoowns "$1"
 fi
 
