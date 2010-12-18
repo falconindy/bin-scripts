@@ -18,9 +18,14 @@ fetchclean() {
 }
 
 for pkg; do
-  repo=$(expac -S %r $pkg)
+  read repo _ < <(expac -S %r $pkg)
   [[ -z $repo ]] && { echo "error: package \`$pkg' not found"; continue; }
-  [[ $repo != community ]] && repo=packages
+
+  case $repo in
+    @(community|multilib)*) repo=community ;;
+    *) repo=packages ;;
+  esac
+
   [[ -d $pkg ]] && { echo  "error: directory \`$pkg' already exists"; continue; }
 
   fetchclean $repo $pkg || echo "error: failed to get package \`$pkg'"
