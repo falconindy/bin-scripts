@@ -1,0 +1,29 @@
+#!/bin/bash
+
+#
+# fetch the latest PKGBUILD from Arch's SVN
+# requires: expac
+#
+
+svnrepo="svn://svn.archlinux.org"
+
+fetchclean() {
+  local repo=$1 pkg=$2
+  svn export $(printf "$svnrepo/%s/%s" $repo $pkg) >/dev/null || return 1
+
+  pushd $pkg >/dev/null || return 1
+  mv trunk/* .
+  rm -rf repos trunk
+  popd >/dev/null 
+}
+
+for pkg; do
+  repo=$(expac -S %r $pkg)
+  [[ -z $repo ]] && { echo "error: package \`$pkg' not found"; continue; }
+  [[ $repo != community ]] && repo=packages
+  [[ -d $pkg ]] && { echo  "error: directory \`$pkg' already exists"; continue; }
+
+  fetchclean $repo $pkg || echo "error: failed to get package \`$pkg'"
+  echo ":: checked out $pkg"
+done
+
