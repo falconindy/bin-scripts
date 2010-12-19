@@ -9,16 +9,6 @@ shopt -s extglob
 
 svnrepo="svn://svn.archlinux.org"
 
-fetchclean() {
-  local repo=$1 pkg=$2
-  svn export "$svnrepo/$repo/$pkg" >/dev/null || return 1
-
-  pushd $pkg >/dev/null || return 1
-  mv trunk/* .
-  rm -rf repos trunk
-  popd >/dev/null 
-}
-
 [[ -z $1 ]] && { echo "Usage: ${0##*/} targets..."; exit 1; }
 
 for pkg; do
@@ -33,7 +23,7 @@ for pkg; do
 
   [[ -d $pkg ]] && { echo  "error: directory \`$pkg' already exists"; continue; }
 
-  fetchclean $repo $pkg &&
+  svn export "$svnrepo/$repo/$pkg/trunk" $pkg >/dev/null &&
     echo ":: checked out $pkg" ||
     echo "error: failed to get package \`$pkg'"
 
