@@ -2,18 +2,26 @@
 
 #
 # fetch the latest PKGBUILD from Arch's SVN
-# requires: expac
+# optdep: expac
 #
 
 shopt -s extglob
 
 svnrepo="svn://svn.archlinux.org"
 
+getrepo() {
+  if type -P expac &>/dev/null; then
+    expac -S '%r' $1
+  else
+    pacman -Si $1 2>/dev/null | sed -n '/^Repo/{s/.*: \(.*\)/\1/p;q}'
+  fi
+}
+
 [[ -z $1 ]] && { echo "Usage: ${0##*/} targets..."; exit 1; }
 
 for pkg; do
   # read only the first, repo is only of mild importance
-  read repo _ < <(expac -S '%r' $pkg)
+  read repo _ < <(getrepo $pkg)
   [[ -z $repo ]] && { echo "error: package \`$pkg' not found"; continue; }
 
   case $repo in
