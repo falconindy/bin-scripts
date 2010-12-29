@@ -1,6 +1,11 @@
 #!/bin/bash
 
-IFS=$'\n' read -r -d $'\0' -a waffles < <(find /mnt/Gluttony/waffles -type f -links 1 \( -iname \*.flac -o -iname \*.mp3 \) -exec dirname {} \; | uniq)
+WAFFLE_DIR="/mnt/Gluttony/waffles"
+
+declare -a waffles
+while read -d $'\0' waffle; do
+  waffles+=("$waffle")
+done < <(find "$WAFFLE_DIR" -links 1 -iregex '.*\.\(flac\|mp3\)' -printf '%h\0' | uniq -z)
 
 if [[ -n $1 ]]; then
   items=("${waffles[@]:$1:${2:-1}}")
@@ -8,6 +13,5 @@ else
   items=("${waffles[@]}")
 fi
 
-for item in "${items[@]}"; do
-  echo $item
-done
+(( ${#items[@]} )) && printf "%q\n" "${items[@]}"
+
