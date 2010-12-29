@@ -2,8 +2,5 @@
 
 WP_ROOT="$HOME/var/pic/wallpaper/16:10"
 
-IFS=$'\n' read -d'\0' -r -a wallpapers < <(find $WP_ROOT -type f)
-
-idx=$(( RANDOM % ${#wallpapers[@]} ))
-echo ${wallpapers[idx]}
+find "$WP_ROOT" -type f -print0 | shuf -z -n1
 
