@@ -17,23 +17,23 @@ getrepo() {
   fi
 }
 
-[[ -z $1 ]] && { echo "Usage: ${0##*/} targets..."; exit 1; }
+[[ -z $1 ]] && { printf "Usage: %s targets...\n" "${0##*/}"; exit 1; }
 
 for pkg; do
   # read only the first, repo is only of mild importance
   read repo _ < <(getrepo $pkg)
-  [[ -z $repo ]] && { echo "error: package \`$pkg' not found"; continue; }
+  [[ -z $repo ]] && { printf "error: package \`%s' not found" "$pkg"; continue; }
 
   case $repo in
     @(community|multilib)*) repo=community ;;
     *) repo=packages ;;
   esac
 
-  [[ -d $pkg ]] && { echo  "error: directory \`$pkg' already exists"; continue; }
+  [[ -d $pkg ]] && { printf "error: directory \`%s' already exists" "$pkg"; continue; }
 
   svn export "$svnrepo/$repo/$pkg/trunk" $pkg >/dev/null &&
-    echo ":: checked out $pkg" ||
-    echo "error: failed to get package \`$pkg'"
+    printf ":: checked out %s\n" "$pkg" ||
+    printf "error: failed to get package \`%s'\n" "$pkg"
 
 done
 

@@ -30,21 +30,19 @@ die() {
 } >&2
 
 mkdir_vp() {
-  mkdir -p "$1" && echo "$ARG0: created directory ``$1'"
+  mkdir -p "$1" && printf "%s: created directory \`%s'" "$ARG0" "$!"
 }
 
 usage() {
-  echo "usage: $ARG0 [options] SOURCE... DESTINATION"
-  echo "       $ARG0 [options] -t DESTINATION SOURCE..."
-  echo
-  echo "   -f                  overwrite existing files"
-  echo "   -h                  display this help message"
-  echo "   -l ARGS             additional parameters to pass to lame"
-  echo "   -q                  don't print to stdout"
-  echo "   -r                  convert directories recursively (implies -p)"
-  echo "   -t PATH             use PATH as destination for converted SOURCEs"
-  echo "   -w                  quit on warnings"
-  echo
+  printf "usage: $ARG0 [options] SOURCE... DESTINATION\n"
+  printf "       $ARG0 [options] -t DESTINATION SOURCE...\n\n"
+  printf "   -f                  overwrite existing files\n"
+  printf "   -h                  display this help message\n"
+  printf "   -l ARGS             additional parameters to pass to lame\n"
+  printf "   -q                  don't print to stdout\n"
+  printf "   -r                  convert directories recursively (implies -p)\n"
+  printf "   -t PATH             use PATH as destination for converted SOURCEs\n"
+  printf "   -w                  quit on warnings\n\n"
 } >&2
 
 # find flac files in a given dir, recursing unless told otherwise

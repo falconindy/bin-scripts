@@ -50,7 +50,7 @@ breadlink() {
       pwd -P
     )
   else
-    echo "$path"
+    printf "%s\n" "$path"
   fi
 }
 do_all_action() {
@@ -72,12 +72,12 @@ stat_repos() {
     local repo=$(breadlink ${repo%.git})
 
     cd "$repo"
-    [[ -n $(git status -s | grep -v "^??") ]] && echo "$repo"
+    [[ -n $(git status -s | grep -v "^??") ]] && printf "%s\n" "$repo"
   done
 }
 
 job_summary() {
-  echo
+  printf "\n"
   msg "Job Summary For $count Repos: git $*"
 
   if [[ ${#fail[@]} -eq 0 ]]; then
@@ -85,15 +85,15 @@ job_summary() {
   else
     for repo in "${fail[@]}"; do
       repofail "$repo"
-      (( VERBOSE )) && { sed 's/^/   /' <<< "${output[$repo]}"; echo; } >&2
+      (( VERBOSE )) && { sed 's/^/   /' <<< "${output[$repo]}"; printf "\n"; } >&2
     done
   fi
-  echo
+  printf "\n"
 
   for repo in "${pass[@]}"; do
     repopass "$repo"
   done
-  echo
+  printf "\n"
 }
 
 # sanity check

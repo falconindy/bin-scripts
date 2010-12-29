@@ -3,8 +3,8 @@
 ALLOWEDCHARS='[:alnum:][:punct:]'
 
 if [[ $# -eq 0 ]]; then
-    echo "Usage: ${0##*/} <string length> [output quantity]" >&2
-    exit 1
+  printf "Usage: %s <string length> [output quantity]" "${0##*/}" >&2
+  exit 1
 fi
 
 quantity=${2:-1}

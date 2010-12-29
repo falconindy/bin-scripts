@@ -7,13 +7,13 @@
 DIFF=${DIFF:-diff}
 
 if [[ ! -f PKGBUILD ]]; then
-  echo "error: No PKGBUILD found in working directory."
+  printf "error: No PKGBUILD found in working directory.\n"
   exit 1
 fi >&2
 
 eval $(grep '^pkgname=' PKGBUILD)
 if [[ -z $pkgname ]]; then
-  echo "error: pkgname not found in PKGBUILD"
+  printf "error: pkgname not found in PKGBUILD\n"
   exit 1
 fi >&2
 

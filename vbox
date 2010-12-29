@@ -56,12 +56,7 @@ connect_vm() {
     exit 1
   fi
 
-  echo -n "[vbox] password for `id -nu`: "
-  STTY_ORIG=`stty -g`
-  stty -echo
-  read PASSWORD
-  echo
-  stty $STTY_ORIG
+  read -s -p "[vbox] password for $(id -nu): " PASSWORD
 
   if ! pgrep VBoxHeadless; then
     VBoxHeadless -startvm "$1" &

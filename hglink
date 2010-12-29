@@ -13,11 +13,11 @@ get_hgroot() {
   while [[ $curpath && ! -d $curpath/.hg ]]; do
     curpath=${curpath%/*}
   done
-  [[ $curpath ]] && echo "$curpath"
+  [[ $curpath ]] && printf "%s\n" "$curpath"
 }
 
 usage() {
- echo "Usage: ${0##*/} [ -l linenum ] [ -b ] <file> [ hash ]"
+ printf "Usage: %s [ -l linenum ] [ -b ] <file> [ hash ]" "${0##*/}"
 } >&2
 
 while getopts ":bhl:" opt; do
@@ -25,8 +25,8 @@ while getopts ":bhl:" opt; do
     b) OPENINBROWSER=1 ;;
     h) usage; exit 1 ;;
     l) LINE=$OPTARG ;;
-    \:) echo "Argument required for -$OPTARG" ;;
-    \?) echo "error: bad arg, no bisuit" ;;
+    \:) printf "Argument required for -%s\n" "$OPTARG" ;;
+    \?) printf "error: bad arg, no bisuit\n" ;;
   esac >&2
 done
 shift $(( OPTIND - 1 ))
@@ -35,7 +35,7 @@ shift $(( OPTIND - 1 ))
 
 fullpath=$(readlink -m "$1")
 hg_root=$(get_hgroot "$fullpath")
-[[ -z $hg_root ]] && { echo "error: '$1' is not in an hg repo"; exit 1; }
+[[ -z $hg_root ]] && { printf "error: '%s' is not in an hg repo\n" "$1"; exit 1; }
 
 # we need to operate from within the hg repo. if we're not in it, go there
 [[ ${PWD#$hg_root} = $PWD ]] && cd $hg_root
@@ -53,7 +53,7 @@ rev=${2:-$(hg log -r $remotetip | awk -F: 'NR == 1 { print $3 }')}
 # relative path from repo root to file
 relpath=${fullpath#$hg_root/}
 if [[ -z $relpath ]]; then
-  echo "error: failed to determine path to $1. tell dave he sucks at bash"
+  printf "error: failed to determine path to %s. tell dave he sucks at bash\n" "$1"
   exit 1
 fi
 
@@ -64,11 +64,11 @@ urlout="${remotepath}/file/$rev/$relpath${LINE:+#l$LINE}"
 if type -P curl >/dev/null; then
   # hgweb kindly responds with a 404 on an invalid link -- so let's validate!
   if ! curl -sf "$urlout" >/dev/null; then
-    echo "error: failed to create a valid link to '$1'. check your repo and filepath"
+    printf "error: failed to create a valid link to '%s'. check your repo and filepath\n" "$1"
     exit 1
   fi
 fi
 
-# echo or open in browser
-(( OPENINBROWSER )) && ${BROWSER:-chromium} "$urlout" || echo "$urlout"
+# print or open in browser
+(( OPENINBROWSER )) && ${BROWSER:-chromium} "$urlout" || printf "%s\n" "$urlout"
 

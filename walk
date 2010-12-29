@@ -21,7 +21,7 @@ get_pwd_contents() {
     [[ -d $f ]] && dir+=("$f") || nondir+=("$f")
   done
 
-  echo "${dir[@]}" "${nondir[@]}"
+  printf "%q\n" "${dir[@]}" "${nondir[@]}"
 }
 
 walk() {
@@ -31,8 +31,8 @@ walk() {
   (( indent += $IND_SZ ))
   pushd "$1" &>/dev/null
 
-  [[ $DIRS_FIRST ]] && dir_contents=$(get_pwd_contents) || dir_contents=(*)
-  for entry in $(get_pwd_contents); do
+  [[ $DIRS_FIRST ]] && dir_contents=($(get_pwd_contents)) || dir_contents=(*)
+  for entry in "${dir_contents[@]}"; do
     [[ -d $entry && ! -L $entry ]] && walk "$entry" || printentry "$entry"
   done
 
@@ -51,7 +51,7 @@ indent=0
 (( $# == 0 )) && DIRS=(.) || DIRS=($@)
 
 for basedir in "${DIRS[@]}"; do
-  cd "$basedir" 2>/dev/null || { echo "Directory not found: '$basedir'" >&2; continue; }
+  cd "$basedir" 2>/dev/null || { printf "Directory not found: '%s'\n" "$basedir" >&2; continue; }
   walk "$basedir"
 done
 

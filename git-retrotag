@@ -87,8 +87,8 @@ review_candidates() {
 
 ask_abort() {
   read -N1 -p "Satisfied? Continue with tagging? (y/N) " reply
-  echo
-  [[ ! "$reply" =~ [Yy] ]] && { echo "Aborting..."; exit 1; }
+  printf "\n"
+  [[ ! "$reply" =~ [Yy] ]] && { printf "Aborting...\n"; exit 1; }
 }
 
 tag_commits() {
@@ -118,10 +118,10 @@ tag_commits() {
   done
 
   if (( count > 0 )); then
-    echo
+    printf "\n" 
     msg "Finished: Added $count new tags. Use \`git push --tags\` to update the remote."
   else
-    echo
+    printf "\n" 
     msg "Finished: No new tags were added."
   fi
 }

@@ -5,7 +5,7 @@
 #
 
 # Arg check
-[[ $# -ne 1 ]] && { echo "Usage: ${0##*/} <file>" >&2; exit 1; }
+[[ $# -ne 1 ]] && { printf "Usage: %s <file>\n" "${0##*/}" >&2; exit 1; }
 
 # Declare an associative array to keep track of our file types.
 # Index elements can be a full MIME type (e.g. image/png), just

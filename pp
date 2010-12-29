@@ -23,7 +23,7 @@ done
 
 (( !SYNC || BORING_OPT )) && exec pacman $@
 
-(( UID != 0 )) && { echo "Must be root!"; exit 1; } >&2
+(( UID != 0 )) && { printf "Must be root!\n"; exit 1; } >&2
 
 # find alternate pacman cache location
 paccache=$(awk -F' *= *' '/[^#]CacheDir/{ print $2 }' /etc/pacman.conf)
@@ -34,7 +34,7 @@ unset paccache
 IFS=$'\n' read -r -d'\0' -a pkgs < <(pacman -p "${PACARGS[@]}" | grep -E '^(ht|f)tp')
 
 # exit on null array
-[[ -z "${pkgs[@]}" ]] && { echo "Nothing to do!"; exit 0; }
+[[ -z "${pkgs[@]}" ]] && { printf "Nothing to do!\n"; exit 0; }
 
 # create a dl manifest, so we don't pass superfluous URLs to aria
 manifest=()
@@ -43,9 +43,9 @@ for pkg in "${pkgs[@]}"; do
 done
 
 if [[ ${manifest[@]} ]]; then
-  echo ":: Packages to be downloaded:"
+  printf ":: Packages to be downloaded:\n"
   for pkg in "${manifest[@]}"; do
-    echo "   ==> ${pkg##*/}"
+    printf "   ==> %s\n" "${pkg##*/}"
   done
 fi
 
@@ -56,6 +56,6 @@ for arg; do
   ARGS+=("$arg")
 done
 
-aria2c --dir "$PACCACHE" -i - < <(for pkg in "${manifest[@]}"; do echo "$pkg"; done)
+aria2c --dir "$PACCACHE" -i - < <(for pkg in "${manifest[@]}"; do printf "%s" "$pkg"; done)
 (( DL_ONLY )) || pacman "${ARGS[@]}"
 

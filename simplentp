@@ -5,11 +5,11 @@
 timeserver="time.nist.gov"
 
 clockset() {
-  echo "Setting hwclock to localtime from time.nist.gov..."
+  printf "Setting hwclock to localtime from time.nist.gov...\n"
   hwclock --set --date="$(awk '{if (NF > 1) print $2,$3 " UTC"}' < /dev/tcp/$timeserver/13)" || return 1
-  echo "Sync'ing hwclock to system..."
+  printf "Sync'ing hwclock to system...\n"
   hwclock -s
-  echo "The time is now:" $(hwclock)
+  printf "The time is now: %s" "$(hwclock)"
   return 0
 }
 

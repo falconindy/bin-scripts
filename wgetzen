@@ -2,7 +2,7 @@
 
 # wgetzen - a wrapper for wget using zenity
 
-type -P zenity >/dev/null || { echo "zenity binary not found!">&2; exit 1; }
+type -P zenity >/dev/null || { printf "zenity binary not found!\n"; exit 1; } >&2
 
 # files: change these if needed/wanted
 WGETFIFO=/tmp/wgetfifo

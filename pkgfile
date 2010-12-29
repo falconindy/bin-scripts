@@ -18,7 +18,7 @@ createfileball() {
   [[ -f repos.files.tar.gz ]] && rm repos.files.tar.gz
   mkdir -p {testing,core,extra,community{,-testing}}
 
-  echo -n "Downloading and extracting repo tarballs... "
+  printf "Downloading and extracting repo tarballs... "
   for repo in "${repos[@]}"; do
     (
     curl -s "${mirror/\$repo/$repo/}/$repo.files.tar.gz" | tar -xz --wildcards -C $repo '*/files'
@@ -29,11 +29,11 @@ createfileball() {
     ) &
   done
   wait
-  echo "done!"
+  printf "done!\n"
 
-  echo -n "Creating master file tarball... "
+  printf "Creating master file tarball... "
   tar czf repos.files.tar.gz *
-  echo "done!"
+  printf "done!\n"
 
   rm -r "${repos[@]}"
 }
@@ -49,7 +49,7 @@ whoowns() {
   local needle="${1//\//\\/}"
   tar -Oxvf "$CACHEDIR/repos.files.tar.gz" |& awk '/%FILES%/{ pkg = prev; next }
                                                    { sub("/files", ""); prev = $0 }
-                                                   /'"$needle"'[^\/]+$/{ printf "%-30s %s\n",pkg,$0 }'
+                                                   /'"$needle"'/{ printf "%-30s %s\n",pkg,$0 }'
 }
 
 [[ $1 ]] || exit 1

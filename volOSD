@@ -36,7 +36,7 @@ get_icon () {
     icon_name+="muted"
   fi
 
-  echo $icon_name
+  printf "$icon_name"
 }
 
 oss_adjust () {

@@ -11,7 +11,7 @@ XPATH_EXPR='//*[@id="manpage"]/*[self::pre or self::h3]'
 DETAG='$d;s|</\?[^>]\+>||g;s|&lt\;|<|g;s|&gt\;|>|g'
 
 usage() {
-  echo "Usage: ${0##*/} [section] manpage" >&2
+  printf "Usage: %s [section] manpage" "${0##*/}" >&2
 }
 
 # less gets color, else its a NOOP
@@ -37,4 +37,4 @@ esac
 man ${SECTION//[^[:digit:]]/} $PAGE 2>/dev/null && exit
 
 manpage=$(curl -s $BASEURL/$PAGE$SECTION | $XMLLINT --xpath "$XPATH_EXPR" - 2>/dev/null | sed "$DETAG" | colorify)
-[[ $manpage ]] && "${PAGER:-less}" <<< "$manpage" || echo "No mancx entry for $PAGE"
+[[ $manpage ]] && "${PAGER:-less}" <<< "$manpage" || printf "No mancx entry for %s\n" "$PAGE"

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Network Device Statistics (in mb)"
+printf "Network Device Statistics (in mb)\n"
 printf "\n%8s%10s%10s%8s\n" "Device" "Sent" "Received" "Ratio"
 #echo ---------------------------------------
 for dev in /sys/class/net/*; do
@@ -11,4 +11,4 @@ for dev in /sys/class/net/*; do
     ratio=$(posty <<< ":2 $sent $recv /")
     printf "%8s%10.2f%10.2f%8.2f\n" $dev $sent $recv $ratio
 done
-echo 
+
