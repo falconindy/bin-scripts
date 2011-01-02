@@ -21,7 +21,8 @@ createfileball() {
   printf "Downloading and extracting repo tarballs... "
   for repo in "${repos[@]}"; do
     (
-    curl -s "${mirror/\$repo/$repo/}/$repo.files.tar.gz" | tar -xz --wildcards -C $repo '*/files'
+    curl -s "${mirror/\$repo/$repo/}/$repo.files.tar.gz" | tar -xz --wildcards -C $repo '*/files' 2>/dev/null
+    (( $? )) && continue
     cd $repo >/dev/null
     for dir in *; do
       mv "$dir" "${dir%-*-*}"
