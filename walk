@@ -4,7 +4,7 @@
 # emulates the 'tree' utility
 #
 
-shopt -s nullglob
+shopt -s nullglob dotglob
 
 # indent size
 IND_SZ=3
