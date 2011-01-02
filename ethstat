@@ -1,14 +1,39 @@
-#!/bin/bash
+#!/usr/bin/env perl
 
-printf "Network Device Statistics (in mb)\n"
-printf "\n%8s%10s%10s%8s\n" "Device" "Sent" "Received" "Ratio"
-#echo ---------------------------------------
-for dev in /sys/class/net/*; do
-    dev=${dev##*/}
-    stats=($(awk "/[\ ]*$dev:/"'{print $2,$10}' /proc/net/dev))
-    sent=$(posty <<< ":2 ${stats[1]} 1024 / 1024 /")
-    recv=$(posty <<< ":2 ${stats[0]} 1024 / 1024 /")
-    ratio=$(posty <<< ":2 $sent $recv /")
-    printf "%8s%10.2f%10.2f%8.2f\n" $dev $sent $recv $ratio
-done
+sub get_stats {
+  my $dev = shift;
+  my @stats;
+
+  open(my $fh, '<', "/sys/class/net/$dev/statistics/tx_bytes")
+    or die("Failed to open file: $!");
+
+  chomp($stats[0] = <$fh>);
+  $stats[0] /= 1024 * 1024;
+  close $fh;
+
+
+  open(my $fh, '<', "/sys/class/net/$dev/statistics/rx_bytes")
+    or die("Failed to open file: $!");
+
+  chomp($stats[1] = <$fh>);
+  $stats[1] /= 1024 * 1024;
+  close $fh;
+
+
+  $stats[2] = $stats[0] / $stats[1];
+
+  return @stats;
+}
+
+opendir(my $dh, "/sys/class/net") or die("Failed to open dir: $!");
+
+print "Network Device Statistics (in mb)\n";
+printf "\n%8s%10s%10s%8s\n", 'Device', 'Sent', 'Received', 'Ratio';
+
+while (readdir($dh)) {
+  next if /\.\.?/;
+  printf("%8s%10.2f%10.2f%8.2f\n", $_, get_stats($_));
+}
+
+closedir($dh);
 
