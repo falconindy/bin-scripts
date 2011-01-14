@@ -56,6 +56,6 @@ for arg; do
   ARGS+=("$arg")
 done
 
-aria2c --dir "$PACCACHE" -i - < <(for pkg in "${manifest[@]}"; do printf "%s" "$pkg"; done)
+aria2c -j 10 --dir "$PACCACHE" -i - < <(printf "%s\n" "${manifest[@]}")
 (( DL_ONLY )) || pacman "${ARGS[@]}"
 
