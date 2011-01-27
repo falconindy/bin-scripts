@@ -26,7 +26,7 @@ done
 (( UID != 0 )) && { printf "Must be root!\n"; exit 1; } >&2
 
 # find alternate pacman cache location
-paccache=$(awk -F' *= *' '/[^#]CacheDir/{ print $2 }' /etc/pacman.conf)
+paccache=$(awk -F'[[:space:]]*=[[:space:]]*' '/^[[:space:]]*CacheDir/ { print $2; exit; }' /etc/pacman.conf)
 [[ $paccache ]] && PACCACHE="$paccache"
 unset paccache
 
