@@ -9,8 +9,14 @@ selfgcolor="#FFFFFF"
 
 cmd=$(dmenu_path | dmenu -i -b -fn $font -nb $normbgcolor -nf $normfgcolor -sb $selbgcolor -sf $selfgcolor)
 
+launch() {
+  ldd "$(type -P "$1")" | awk '$1 ~ /libX11/ { exit 42; }' &>/dev/null
+  (( $! == 42 )) && exec "$1"
+  exec $term -name "$1" -e "$@"
+}
+
 case $cmd in
   ncmpcpp|htop|vim)   exec $term -name $cmd -e $cmd ;;
   tmux)               exec $term -name tmux -geometry 122x77 -e tmux -L main attach ;;
-  *)                  exec $cmd
+  *)                  launch "$cmd"
 esac
