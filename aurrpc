@@ -20,7 +20,7 @@ esac
 exec 4<>/dev/tcp/aur.archlinux.org/80
 
 # send http request (avoid 1.1 so we don't have to handle a keep-alive)
-printf 'GET /rpc.php?type=%s&arg=%s HTTP/1.1\r
+printf 'GET /rpc.php?type=%s&arg=%s HTTP/1.0\r
 User-Agent: bashium 0.1\r
 Host: aur.archlinux.org\r
 Accept: */*\r
