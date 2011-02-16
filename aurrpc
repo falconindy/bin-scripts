@@ -1,45 +1,111 @@
 #!/bin/bash
 
 #
-# raw json fetcher for the AUR
+# stupid proof of concept bash based AUR agent
 #
 
-out() {
-  type -p json_reformat >/dev/null && json_reformat || cat
+shopt -s extglob
+
+# content handlers
+json() {
+  json_reformat
 }
 
+# decompress handlers
+gzip() {
+  command gzip -cd
+}
+
+x-tgz() {
+  tar xz
+  (( $? )) && echo "fail" || echo "success"
+}
+
+# http handling
+connect() {
+  { exec 4<>/dev/tcp/aur.archlinux.org/80; } 2>/dev/null
+  (( $? )) && { echo "error: failed to connect to AUR"; exit 1; }
+}
+
+rpc_request() {
+  local qtype=$1 arg=$2
+
+  printf 'GET /rpc.php?type=%s&arg=%s HTTP/1.0\r
+User-Agent: bashium 0.1\r
+Host: aur.archlinux.org\r
+Accept: */*\r
+Accept-Encoding: gzip,deflate\r
+\r
+' "$qtype" "$arg" >&4
+}
+
+dl_request() {
+  local arg=$1
+
+  printf 'GET /packages/%s/%s.tar.gz HTTP/1.0\r
+User-Agent: bashium 0.1\r
+Host: aur.archlinux.org\r
+Accept: */*\r
+\r
+' "$arg" "$arg" >&4
+}
+
+# op checking
 case $# in
   1) qtype=info arg=$1 ;;
   2) qtype=$1 arg=$2 ;;
   *) exit 1 ;;
 esac
 
-[[ $qtype = @(info|?(m)search) ]] || exit 2
-
-# open connection
-exec 4<>/dev/tcp/aur.archlinux.org/80
-
-# send http request (avoid 1.1 so we don't have to handle a keep-alive)
-printf 'GET /rpc.php?type=%s&arg=%s HTTP/1.0\r
-User-Agent: bashium 0.1\r
-Host: aur.archlinux.org\r
-Accept: */*\r
-Accept-Encoding: deflate, gzip\r
-\r
-' "$qtype" "$arg" >&4
+# check operation type
+case $qtype in
+  @(info|?(m)search)) connect
+                      rpc_request "$qtype" "$arg" ;;
+  dl) connect
+      dl_request "$arg" ;;
+  *) echo "invalid request type"
+     exit 2 ;;
+esac
 
 # read http response code
 read -r -u 4 _ resp _
-if [[ $resp ]] && (( resp >= 300 )); then
-  echo "error: server responded with HTTP $resp"
+if [[ $resp ]]; then
+  if (( resp == 404 )); then
+    echo "error: package $arg not found"
+    exit 1
+  elif (( resp >= 300 )); then
+    echo "error: server responded with HTTP $resp"
+    exit 1
+  fi
+  # assume HTTP 200 (eww)
+fi
+
+# headers aren't always Mixed-Case
+declare -l header
+decompress=cat
+
+# read response until the end of the headers
+while IFS=': ' read -r -u 4 header value; do
+  # end of headers
+  [[ $header = $'\r' ]] && break
+
+  # parse headers we care about
+  case $header in
+    content-type) IFS=$'\r/' read _ content <<< "$value" ;;
+    content-encoding) IFS=$'\r' read decompress <<< "$value" ;;
+  esac
+done
+
+if [[ $(type -t $content) != @(function|file) ]]; then
+  echo "error: unknown/unhandled content type: $content"
   exit 1
 fi
 
-# read response until the end of the headers
-while read -r -u 4 body; do
-  [[ $body = $'\r' ]] && break
-done
+if [[ $(type -t $decompress) != @(function|file) ]]; then
+  echo "error: unknown/unhandled compression type: $compress"
+  exit 1
+fi
 
-# gunzip the remainder of the FD
-gzip -d <&4 | out
+# display/extract
+$decompress <&4 | $content
 
