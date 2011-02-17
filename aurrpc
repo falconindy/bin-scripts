@@ -65,14 +65,14 @@ x-tgz() {
 
 # decompress handlers
 gzip() {
-  command gzip -cd
+  command gzip -d
 }
 
 
 # connect handler
 connect() {
-  { exec 4<>/dev/tcp/$hostname/$port; } 2>/dev/null
-  (( $? )) && { die 'error: failed to connect to %s:%s\n' "$hostname" "$port"; }
+  { exec 4<>/dev/tcp/$hostname/$port; } 2>/dev/null ||
+    die 'error: failed to connect to %s:%s\n' "$hostname" "$port"
 }
 
 
