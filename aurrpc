@@ -78,10 +78,6 @@ connect() {
   (( $? )) && { die 'error: failed to connect to %s:%s\n' "$hostname" "$port"; }
 }
 
-shutdown() {
-  exec 4<&-
-}
-
 
 # request handler
 send_http_request() {
@@ -153,7 +149,7 @@ read_response_body() {
   fi
 }
 
-trap 'shutdown' 0 QUIT TERM INT
+trap 'exec 4<&-' 0 QUIT TERM INT
 
 # main()
 while getopts ':dhims' opt; do
