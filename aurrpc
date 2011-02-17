@@ -26,7 +26,7 @@ usage() {
 
 # content handlers
 json() {
-  json_reformat
+  type -P json_reformat >/dev/null && json_reformat || cat
 }
 
 x-tgz() {
@@ -151,7 +151,7 @@ shift $(( OPTIND - 1 ))
 
 connect
 for target; do
-  [[ -v qtype ]] && arg=$qtype || arg=$target
+  arg=${qtype:-$target}
   send_http_request "$(printf "$uri" "$arg" "$target")"
   read_response_code
   read_response_headers
