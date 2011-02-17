@@ -34,9 +34,9 @@ json() {
 x-tgz() {
   tar xz
   if (( $? )); then 
-    echo "error downloading $target"
+    printf 'error downloading %s\n' "$target"
   else
-    echo "$target downloaded to $PWD"
+    printf '%s downloaded to %s\n' "$target" "$PWD"
   fi
 }
 
@@ -54,7 +54,7 @@ deflate() {
 # connect handler
 connect() {
   { exec 4<>/dev/tcp/$hostname/$port; } 2>/dev/null
-  (( $? )) && { echo "error: failed to connect to $hostname:$port"; exit 1; }
+  (( $? )) && { printf 'error: failed to connect to %s:%s\n' "$hostname" "$port"; exit 1; }
 }
 
 shutdown() {
@@ -80,7 +80,7 @@ read_response_code() {
   read -r -u 4 _ resp _
   if [[ $resp ]]; then
     if (( resp == 404 )); then
-      echo "error: package $arg not found"
+      echo "error: package $target not found"
       exit 1
     elif (( resp >= 300 )); then
       echo "error: server responded with HTTP $resp"
@@ -102,12 +102,12 @@ read_response_headers() {
   content_type=${content_type##*/} # trim 'application/'
 
   if [[ $(type -t $content_type) != @(function|file) ]]; then
-    echo "error: unknown/unhandled content type: $content_type"
+    printf 'error: unknown/unhandled content type: %s\n' "$content_type"
     exit 1
   fi
 
   if [[ $(type -t $content_encoding) != @(function|file) ]]; then
-    echo "error: unknown/unhandled encoding type: $content_encoding"
+    printf 'error: unknown/unhandled encoding type: %s\n' "$content_encoding"
     exit 1
   fi
 }
@@ -144,7 +144,7 @@ while getopts ':dhims' opt; do
     i) uri=$fmt_rpcpath; rtype=rpc; qtype=info ;;
     m) uri=$fmt_rpcpath; rtype=rpc; qtype=msearch ;;
     s) uri=$fmt_rpcpath; rtype=rpc; qtype=search ;;
-    ?) echo "${0##*/}: invalid option -- '$OPTARG'"
+    ?) printf '%s : invalid option -- '\''%s'\'' \n' "${0##*/}" "$OPTARG"
        exit 1 ;;
     *) usage ;;
   esac
