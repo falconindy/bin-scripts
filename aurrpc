@@ -14,6 +14,16 @@ uastring="bashium 0.2 (bash ${BASH_VERSINFO[0]}-${BASH_VERSINFO[1]})"
 fmt_pkgpath='/packages/%s/%s.tar.gz'
 fmt_rpcpath='/rpc.php?type=%s&arg=%s'
 
+usage() {
+  printf -- 'Usage: %s operation targets...\n\n' "${0##*/}"
+  printf -- 'Operations:\n'
+  printf -- '\t-d    download\n'
+  printf -- '\t-i    package info\n'
+  printf -- '\t-m    search by maintainer\n'
+  printf -- '\t-s    search by package\n'
+  printf '\n'
+  exit 1
+}
 
 # content handlers
 json() {
@@ -133,6 +143,7 @@ trap 'shutdown' 0 QUIT TERM INT
 while getopts 'dims' opt; do
   case $opt in
     d) uri=$fmt_pkgpath; rtype=dl ;;
+    h) usage ;;
     i) uri=$fmt_rpcpath; rtype=rpc; qtype=info ;;
     m) uri=$fmt_rpcpath; rtype=rpc; qtype=msearch ;;
     s) uri=$fmt_rpcpath; rtype=rpc; qtype=search ;;
