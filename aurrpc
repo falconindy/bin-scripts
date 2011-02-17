@@ -167,11 +167,11 @@ trap 'exec 4<&-' 0 QUIT TERM INT
 # main()
 while getopts ':dhims' opt; do
   case $opt in
-    d) uri=$fmt_pkgpath; rtype=dl ;;
+    d) uri=$fmt_pkgpath ;;
     h) usage ;;
-    i) uri=$fmt_rpcpath; rtype=rpc; qtype=info ;;
-    m) uri=$fmt_rpcpath; rtype=rpc; qtype=msearch ;;
-    s) uri=$fmt_rpcpath; rtype=rpc; qtype=search ;;
+    i) uri=$fmt_rpcpath qtype=info ;;
+    m) uri=$fmt_rpcpath qtype=msearch ;;
+    s) uri=$fmt_rpcpath qtype=search ;;
     ?) die '%s: invalid option -- '\''%s'\' "${0##*/}" "$OPTARG"
        exit 1 ;;
     *) usage ;;
