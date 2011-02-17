@@ -20,8 +20,7 @@ usage() {
   printf -- '\t-d    download\n'
   printf -- '\t-i    package info\n'
   printf -- '\t-m    search by maintainer\n'
-  printf -- '\t-s    search by package\n'
-  printf '\n'
+  printf -- '\t-s    search by package\n\n'
   exit 1
 }
 
@@ -95,30 +94,26 @@ read_response_headers() {
     # end of headers
     [[ $header = $'\r' ]] && break
 
-    # parse headers we care about
-    case $header in
-      content-type)      IFS=$'\r/' read _ content <<< "$value" ;;
-      content-encoding)  IFS=$'\r' read decompress <<< "$value" ;;
-      content-length)    IFS=$'\r' read contentlen <<< "$value" ;;
-      transfer-encoding) IFS=$'\r' read transferenc <<< "$value" ;;
-    esac
+    read -r -d $'\r' "${header//-/_}" <<< "$value"
   done
 
-  if [[ $(type -t $content) != @(function|file) ]]; then
-    echo "error: unknown/unhandled content type: $content"
+  content_type=${content_type##*/} # trim 'application/'
+
+  if [[ $(type -t $content_type) != @(function|file) ]]; then
+    echo "error: unknown/unhandled content type: $content_type"
     exit 1
   fi
 
-  if [[ $(type -t $decompress) != @(function|file) ]]; then
-    echo "error: unknown/unhandled compression type: $compress"
+  if [[ $(type -t $content_encoding) != @(function|file) ]]; then
+    echo "error: unknown/unhandled compression type: $content_encoding"
     exit 1
   fi
 }
 
 read_response_body() {
   if (( contentlen )); then
-    <&4 dd bs=$contentlen count=1 2>/dev/null | $decompress | $content
-  elif [[ "$transferenc" = chunked ]]; then
+    <&4 dd bs=$content_length count=1 2>/dev/null | $content_encoding | $content_type
+  elif [[ "$transfer_encoding" = chunked ]]; then
     while true; do
       read -r -d $'\r\n' -u 4 len           # read length, consume cr
 
@@ -131,22 +126,24 @@ read_response_body() {
       # dd seems to round block sizes, so this sadly has to be unbuffered
       <&4 dd skip=1 bs=1 count=$len 2>/dev/null
       read -r -n 2 -u 4 _                   # consume crlf
-    done | $decompress | $content
+    done | $content_encoding | $content_type
   else
-    $decompress <&4 | $content
+    $content_encoding <&4 | $content_type
   fi
 }
 
 trap 'shutdown' 0 QUIT TERM INT
 
 # main()
-while getopts 'dims' opt; do
+while getopts ':dhims' opt; do
   case $opt in
     d) uri=$fmt_pkgpath; rtype=dl ;;
     h) usage ;;
     i) uri=$fmt_rpcpath; rtype=rpc; qtype=info ;;
     m) uri=$fmt_rpcpath; rtype=rpc; qtype=msearch ;;
     s) uri=$fmt_rpcpath; rtype=rpc; qtype=search ;;
+    ?) echo "${0##*/}: invalid option -- '$OPTARG'"
+       exit 1 ;;
     *) usage ;;
   esac
 done
