@@ -120,12 +120,12 @@ read_response_headers() {
 
   content_type=${content_type##*/} # trim 'application/'
 
-  if [[ $(type -t $content_type) != @(function|file) ]]; then
+  if [[ $(type -t $content_type) = !(function|file) ]]; then
     die 'unknown/unhandled content type: %s\n' "$content_type"
     exit 1
   fi
 
-  if [[ $(type -t $content_encoding) != @(function|file) ]]; then
+  if [[ $(type -t $content_encoding) = !(function|file) ]]; then
     die 'unknown/unhandled encoding type: %s\n' "$content_encoding"
     exit 1
   fi
