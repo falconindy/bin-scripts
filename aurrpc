@@ -13,6 +13,7 @@ uastring="bashium 0.2 (bash ${BASH_VERSINFO[0]}-${BASH_VERSINFO[1]})"
 
 hostname='aur.archlinux.org'
 port='80'
+bufsiz=4096
 fmt_pkgpath='/packages/%s/%s.tar.gz'
 fmt_rpcpath='/rpc.php?type=%s&arg=%s'
 
@@ -127,28 +128,40 @@ read_response_headers() {
   fi
 }
 
+read_buffered() {
+  fd=$1 len=$2
+
+  while (( len > 0 )); do
+    (( len > bufsiz )) && readlen=$bufsiz || readlen=$len
+    actual=$(<&$fd dd bs=1 count=$readlen 2>/dev/null | tee >(wc -c) >&2)
+    (( len -= actual ))
+  done 2>&1
+}
+
 read_response_body() {
   if (( content_length )); then
-    <&4 dd bs=$content_length count=1 2>/dev/null | $content_encoding | $content_type
+    read_buffered 4 $content_length | $content_encoding | $content_type
   elif [[ "$transfer_encoding" = chunked ]]; then
     while true; do
-      read -r -d $'\r\n' -u 4 len           # read length, consume cr
+      read -r -d $'\r\n' -u 4 len           # read length, consume \r
+      read -r -n 1 -u 4 _                   # consume \n
 
-      len=$(( 0x$len ))                     # convert from hex2dec
-      if (( len == 0 )); then
-        read -r -n 4 -u 4 _                 # consume crlfcrlf
+      len=$(( 0x$len ))                     # convert hex2dec
+      if (( len == 0 )); then               # exit condition
+        read -r -n 4 -u 4 _                 # consume final \r\n\r\n
         break
       fi
 
-      # dd seems to round block sizes, so this sadly has to be unbuffered
-      <&4 dd skip=1 bs=1 count=$len 2>/dev/null
-      read -r -n 2 -u 4 _                   # consume crlf
+      read_buffered 4 $len                  # read response body
+
+      read -r -n 2 -u 4 _                   # consume \r\n
     done | $content_encoding | $content_type
   else
     $content_encoding <&4 | $content_type
   fi
 }
 
+# shutdown socket on exit
 trap 'exec 4<&-' 0 QUIT TERM INT
 
 # main()
