@@ -6,106 +6,147 @@
 
 shopt -s extglob
 
+declare -l header         # response headers aren't always Mixed-Case
+declare decompress=cat    # default NOOP decompressor
+
+uastring="bashium 0.2 (bash ${BASH_VERSINFO[0]}-${BASH_VERSINFO[1]})"
+
+fmt_pkgpath='/packages/%s/%s.tar.gz'
+fmt_rpcpath='/rpc.php?type=%s&arg=%s'
+
+
 # content handlers
 json() {
   json_reformat
 }
+
+x-tgz() {
+  tar xz
+  if (( $? )); then 
+    echo "error downloading $target"
+  else
+    echo "$target downloaded to $PWD"
+  fi
+}
+
 
 # decompress handlers
 gzip() {
   command gzip -cd
 }
 
-x-tgz() {
-  tar xz
-  (( $? )) && echo "fail" || echo "success"
+deflate() {
+  uncompress -c
 }
 
-# http handling
+
+# connect handler
 connect() {
   { exec 4<>/dev/tcp/aur.archlinux.org/80; } 2>/dev/null
   (( $? )) && { echo "error: failed to connect to AUR"; exit 1; }
 }
 
-rpc_request() {
-  local qtype=$1 arg=$2
+shutdown() {
+  exec 4<&-
+}
 
-  printf 'GET /rpc.php?type=%s&arg=%s HTTP/1.0\r
-User-Agent: bashium 0.1\r
+
+# request handler
+send_http_request() {
+  printf 'GET %s HTTP/1.1\r
+User-Agent: %s\r
 Host: aur.archlinux.org\r
-Accept: */*\r
 Accept-Encoding: gzip,deflate\r
-\r
-' "$qtype" "$arg" >&4
-}
-
-dl_request() {
-  local arg=$1
-
-  printf 'GET /packages/%s/%s.tar.gz HTTP/1.0\r
-User-Agent: bashium 0.1\r
-Host: aur.archlinux.org\r
 Accept: */*\r
+Connection: Keep-Alive\r
 \r
-' "$arg" "$arg" >&4
+' "$1" "$uastring" >&4
 }
 
-# op checking
-case $# in
-  1) qtype=info arg=$1 ;;
-  2) qtype=$1 arg=$2 ;;
-  *) exit 1 ;;
-esac
 
-# check operation type
-case $qtype in
-  @(info|?(m)search)) connect
-                      rpc_request "$qtype" "$arg" ;;
-  dl) connect
-      dl_request "$arg" ;;
-  *) echo "invalid request type"
-     exit 2 ;;
-esac
+# response handlers
+read_response_code() {
+  read -r -u 4 _ resp _
+  if [[ $resp ]]; then
+    if (( resp == 404 )); then
+      echo "error: package $arg not found"
+      exit 1
+    elif (( resp >= 300 )); then
+      echo "error: server responded with HTTP $resp"
+      exit 1
+    fi
+    # assume HTTP 200 (eww)
+  fi
+}
 
-# read http response code
-read -r -u 4 _ resp _
-if [[ $resp ]]; then
-  if (( resp == 404 )); then
-    echo "error: package $arg not found"
-    exit 1
-  elif (( resp >= 300 )); then
-    echo "error: server responded with HTTP $resp"
+read_response_headers() {
+  # read response until the end of the headers
+  while IFS=': ' read -r -u 4 header value; do
+    # end of headers
+    [[ $header = $'\r' ]] && break
+
+    # parse headers we care about
+    case $header in
+      content-type)      IFS=$'\r/' read _ content <<< "$value" ;;
+      content-encoding)  IFS=$'\r' read decompress <<< "$value" ;;
+      content-length)    IFS=$'\r' read contentlen <<< "$value" ;;
+      transfer-encoding) IFS=$'\r' read transferenc <<< "$value" ;;
+    esac
+  done
+
+  if [[ $(type -t $content) != @(function|file) ]]; then
+    echo "error: unknown/unhandled content type: $content"
     exit 1
   fi
-  # assume HTTP 200 (eww)
-fi
 
-# headers aren't always Mixed-Case
-declare -l header
-decompress=cat
+  if [[ $(type -t $decompress) != @(function|file) ]]; then
+    echo "error: unknown/unhandled compression type: $compress"
+    exit 1
+  fi
+}
 
-# read response until the end of the headers
-while IFS=': ' read -r -u 4 header value; do
-  # end of headers
-  [[ $header = $'\r' ]] && break
+read_response_body() {
+  if (( contentlen )); then
+    <&4 dd bs=$contentlen count=1 2>/dev/null | $decompress | $content
+  elif [[ "$transferenc" = chunked ]]; then
+    while true; do
+      read -r -d $'\r\n' -u 4 len           # read length, consume cr
 
-  # parse headers we care about
-  case $header in
-    content-type) IFS=$'\r/' read _ content <<< "$value" ;;
-    content-encoding) IFS=$'\r' read decompress <<< "$value" ;;
+      len=$(( 0x$len ))                     # convert from hex2dec
+      if (( len == 0 )); then
+        read -r -n 4 -u 4 _                 # consume crlfcrlf
+        break
+      fi
+
+      # dd seems to round block sizes, so this sadly has to be unbuffered
+      <&4 dd skip=1 bs=1 count=$len 2>/dev/null
+      read -r -n 2 -u 4 _                   # consume crlf
+    done | $decompress | $content
+  else
+    $decompress <&4 | $content
+  fi
+}
+
+trap 'shutdown' 0 QUIT TERM INT
+
+# main()
+while getopts 'dims' opt; do
+  case $opt in
+    d) uri=$fmt_pkgpath; rtype=dl ;;
+    i) uri=$fmt_rpcpath; rtype=rpc; qtype=info ;;
+    m) uri=$fmt_rpcpath; rtype=rpc; qtype=msearch ;;
+    s) uri=$fmt_rpcpath; rtype=rpc; qtype=search ;;
+    *) usage ;;
   esac
 done
+shift $(( OPTIND - 1 ))
 
-if [[ $(type -t $content) != @(function|file) ]]; then
-  echo "error: unknown/unhandled content type: $content"
-  exit 1
-fi
-
-if [[ $(type -t $decompress) != @(function|file) ]]; then
-  echo "error: unknown/unhandled compression type: $compress"
-  exit 1
-fi
-
-# display/extract
-$decompress <&4 | $content
+connect
+for target; do
+  [[ -v qtype ]] && arg=$qtype || arg=$target
+  send_http_request "$(printf "$uri" "$arg" "$target")"
+  read_response_code
+  read_response_headers
+  read_response_body
+done
 
