@@ -6,8 +6,8 @@
 
 shopt -s extglob
 
-declare -l header         # response headers aren't always Mixed-Case
-declare decompress=cat    # default NOOP decompressor
+declare -l header             # response headers aren't always Mixed-Case
+declare content_encoding=cat  # default NOOP decompressor
 
 uastring="bashium 0.2 (bash ${BASH_VERSINFO[0]}-${BASH_VERSINFO[1]})"
 
@@ -105,13 +105,13 @@ read_response_headers() {
   fi
 
   if [[ $(type -t $content_encoding) != @(function|file) ]]; then
-    echo "error: unknown/unhandled compression type: $content_encoding"
+    echo "error: unknown/unhandled encoding type: $content_encoding"
     exit 1
   fi
 }
 
 read_response_body() {
-  if (( contentlen )); then
+  if (( content_length )); then
     <&4 dd bs=$content_length count=1 2>/dev/null | $content_encoding | $content_type
   elif [[ "$transfer_encoding" = chunked ]]; then
     while true; do
