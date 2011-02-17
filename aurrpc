@@ -6,14 +6,12 @@
 
 shopt -s extglob
 
-declare -l header             # response headers aren't always Mixed-Case
-declare content_encoding=cat  # default NOOP decompressor
+content_encoding=cat          # NOOP decompressor
+bufsiz=4096
 
 uastring="bashium 0.2 (bash ${BASH_VERSINFO[0]}-${BASH_VERSINFO[1]})"
-
 hostname='aur.archlinux.org'
 port='80'
-bufsiz=4096
 fmt_pkgpath='/packages/%s/%s.tar.gz'
 fmt_rpcpath='/rpc.php?type=%s&arg=%s'
 
@@ -108,7 +106,8 @@ read_response_headers() {
     # end of headers
     [[ $header = $'\r' ]] && break
 
-    read -r -d $'\r' "${header//-/_}" <<< "$value"
+    header=$(tr [:upper:] [:lower:] <<< ${header//-/_})
+    read -r -d $'\r' "$header" <<< "$value"
   done
 
   content_type=${content_type##*/} # trim 'application/'
