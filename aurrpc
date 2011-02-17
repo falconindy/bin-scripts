@@ -11,6 +11,8 @@ declare content_encoding=cat  # default NOOP decompressor
 
 uastring="bashium 0.2 (bash ${BASH_VERSINFO[0]}-${BASH_VERSINFO[1]})"
 
+hostname='aur.archlinux.org'
+port='80'
 fmt_pkgpath='/packages/%s/%s.tar.gz'
 fmt_rpcpath='/rpc.php?type=%s&arg=%s'
 
@@ -51,8 +53,8 @@ deflate() {
 
 # connect handler
 connect() {
-  { exec 4<>/dev/tcp/aur.archlinux.org/80; } 2>/dev/null
-  (( $? )) && { echo "error: failed to connect to AUR"; exit 1; }
+  { exec 4<>/dev/tcp/$hostname/$port; } 2>/dev/null
+  (( $? )) && { echo "error: failed to connect to $hostname:$port"; exit 1; }
 }
 
 shutdown() {
@@ -64,12 +66,12 @@ shutdown() {
 send_http_request() {
   printf 'GET %s HTTP/1.1\r
 User-Agent: %s\r
-Host: aur.archlinux.org\r
+Host: %s\r
 Accept-Encoding: gzip,deflate\r
 Accept: */*\r
 Connection: Keep-Alive\r
 \r
-' "$1" "$uastring" >&4
+' "$1" "$uastring" "$hostname" >&4
 }
 
 
@@ -149,10 +151,11 @@ while getopts ':dhims' opt; do
 done
 shift $(( OPTIND - 1 ))
 
+(( $# )) || usage
+
 connect
 for target; do
-  arg=${qtype:-$target}
-  send_http_request "$(printf "$uri" "$arg" "$target")"
+  send_http_request "$(printf "$uri" "${qtype:-$target}" "$target")"
   read_response_code
   read_response_headers
   read_response_body
