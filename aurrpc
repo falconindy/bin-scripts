@@ -179,7 +179,7 @@ while getopts ':dhims' opt; do
 done
 shift $(( OPTIND - 1 ))
 
-(( $# )) || usage
+{ [[ $uri ]] && (( $# )); } || usage
 
 connect
 for target; do
