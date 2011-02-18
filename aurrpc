@@ -52,11 +52,10 @@ json() {
 }
 
 x-tgz() {
-  tar xz
-  if (( $? )); then 
-    error 'error downloading %s' "$target"
-  else
+  if tar xz; then
     info '%s downloaded to %s' "$target" "$PWD"
+  else
+    error 'error downloading %s' "$target"
   fi
 }
 
