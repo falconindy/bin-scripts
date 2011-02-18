@@ -156,7 +156,7 @@ read_response_body() {
 }
 
 # shutdown socket on exit
-trap 'exec 4<&-' 0 QUIT TERM INT
+trap 'exec 4<&-' 0 QUIT
 
 # main()
 while getopts ':dhims' opt; do
