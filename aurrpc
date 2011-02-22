@@ -88,7 +88,8 @@ Connection: Keep-Alive\r
 
 # response handlers
 read_response_code() {
-  read -r -u 4 _ resp _
+  read -r -u 4 header resp status
+  (( verbose)) && printf '%s: %s %s\n' "$header" "$resp" "$status"
   if [[ $resp ]]; then
     if (( resp == 404 )); then
       die "package \`%s' not found" "$target"
@@ -105,9 +106,12 @@ read_response_headers() {
     # end of headers
     [[ $header = $'\r' ]] && break
 
-    header=$(tr [:upper:] [:lower:] <<< ${header//-/_})
+    (( verbose)) && printf '%s: %s\n' "$header" "$value"
+
+    header=$(tr '[:upper:]' '[:lower:]' <<< ${header//-/_})
     read -r -d $'\r' "$header" <<< "$value"
   done
+  (( verbose )) && printf '\n'
 
   content_type=${content_type##*/} # trim 'application/'
 
@@ -159,13 +163,14 @@ read_response_body() {
 trap 'exec 4<&-' 0 QUIT
 
 # main()
-while getopts ':dhims' opt; do
+while getopts ':dhimsv' opt; do
   case $opt in
     d) uri=$fmt_pkgpath ;;
     h) usage ;;
     i) uri=$fmt_rpcpath qtype=info ;;
     m) uri=$fmt_rpcpath qtype=msearch ;;
     s) uri=$fmt_rpcpath qtype=search ;;
+    v) verbose=1 ;;
     ?) die '%s: invalid option -- '\''%s'\' "${0##*/}" "$OPTARG"
        exit 1 ;;
   esac
