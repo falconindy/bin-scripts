@@ -6,6 +6,7 @@
 
 shopt -s extglob
 
+declare -a respheaders
 content_encoding=cat          # NOOP decompressor
 bufsiz=4096
 
@@ -68,7 +69,7 @@ gzip() {
 
 # connect handler
 connect() {
-  unset connection
+  unset "${respheaders[@]}"
   { exec 4<>/dev/tcp/$hostname/$port; } 2>/dev/null ||
     die 'error: failed to connect to %s:%s\n' "$hostname" "$port"
 }
@@ -111,6 +112,8 @@ read_response_headers() {
 
     header=$(tr '[:upper:]' '[:lower:]' <<< ${header//-/_})
     read -r -d $'\r' "$header" <<< "$value"
+
+    respheaders+=("$header")
   done
   (( verbose )) && printf '\n'
 
