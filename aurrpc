@@ -68,6 +68,7 @@ gzip() {
 
 # connect handler
 connect() {
+  unset connection
   { exec 4<>/dev/tcp/$hostname/$port; } 2>/dev/null ||
     die 'error: failed to connect to %s:%s\n' "$hostname" "$port"
 }
@@ -181,7 +182,7 @@ shift $(( OPTIND - 1 ))
 
 connect
 for target; do
-  [[ $connection = close ]] && connect      # keep-alive expired
+  [[ $connection = close ]] && connect;     # keep-alive expired
   send_http_request "$(printf "$uri" "${qtype:-$target}" "$target")"
   read_response_code
   read_response_headers
