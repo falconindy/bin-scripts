@@ -118,12 +118,10 @@ read_response_headers() {
 
   if [[ $(type -t $content_type) = !(function|file) ]]; then
     die 'unknown/unhandled content type: %s\n' "$content_type"
-    exit 1
   fi
 
   if [[ $(type -t $content_encoding) = !(function|file) ]]; then
     die 'unknown/unhandled encoding type: %s\n' "$content_encoding"
-    exit 1
   fi
 }
 
