@@ -1,7 +1,17 @@
 #!/bin/bash
 # list directory permissions along the path
 
-target=$(readlink -f "${1:-$PWD}")
+shopt -s extglob
+
+rlflags='-'
+while getopts fem opt; do
+  [[ $opt == @(f|e|m) ]] && rlflags+="$opt"
+done
+shift $(( OPTIND - 1 ))
+
+[[ $rlflags = - && ! -L ${!:PWD} ]] && rlflags='-f'
+
+target=$(readlink $rlflags "${1:-$PWD}")
 
 if [[ ! -e $target ]]; then
   echo "${0##*/}: cannot stat \`$target': No such file or directory"
