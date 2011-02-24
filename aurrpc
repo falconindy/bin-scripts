@@ -17,14 +17,17 @@ fmt_pkgpath='/packages/%s/%s.tar.gz'
 fmt_rpcpath='/rpc.php?type=%s&arg=%s'
 
 usage() {
-  printf -- 'Usage: %s operation targets...\n\n' "${0##*/}"
-  printf -- 'Operations:\n'
-  printf -- '\t-d    download\n'
-  printf -- '\t-i    package info\n'
-  printf -- '\t-m    search by maintainer\n'
-  printf -- '\t-s    search by package\n\n'
+  printf -- 'Usage: %s operation target...\n\n' "${0##*/}"
+  printf -- ' Operations:\n'
+  printf -- '  -d    download target(s)\n'
+  printf -- '  -i    show package info for target(s)\n'
+  printf -- '  -m    search for target(s) by maintainer\n'
+  printf -- '  -s    search for target(s)\n\n'
+  printf -- ' Options:\n'
+  printf -- '  -h    display this help message and exit\n'
+  printf -- '  -v    show http response headers\n'
   exit 1
-}
+} >&2
 
 die() {
   error "$@"
