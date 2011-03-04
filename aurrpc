@@ -15,6 +15,7 @@ hostname='aur.archlinux.org'
 port='80'
 fmt_pkgpath='/packages/%s/%s.tar.gz'
 fmt_rpcpath='/rpc.php?type=%s&arg=%s'
+fmt_pbpath='/packages/%s/PKGBUILD'
 
 usage() {
   printf -- 'Usage: %s operation target...\n\n' "${0##*/}"
@@ -61,6 +62,10 @@ x-tgz() {
   else
     error 'error downloading %s' "$target"
   fi
+}
+
+plain() {
+  less
 }
 
 
@@ -167,9 +172,10 @@ read_response_body() {
 trap 'exec 4<&-' 0 QUIT
 
 # main()
-while getopts ':dhimsv' opt; do
+while getopts ':dghimsv' opt; do
   case $opt in
     d) uri=$fmt_pkgpath ;;
+    g) uri=$fmt_pbpath ;;
     h) usage ;;
     i) uri=$fmt_rpcpath qtype=info ;;
     m) uri=$fmt_rpcpath qtype=msearch ;;
