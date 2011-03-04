@@ -17,4 +17,4 @@ if [[ -z $pkgname ]]; then
   exit 1
 fi >&2
 
-diff ${@:--u} PKGBUILD <(curl -s "http://aur.archlinux.org/packages/$pkgname/$pkgname/PKGBUILD")
+diff ${@:--u} PKGBUILD <(curl -s "http://aur.archlinux.org/packages/$pkgname/PKGBUILD")
