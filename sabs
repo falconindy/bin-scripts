@@ -13,7 +13,7 @@ getrepo() {
   if type -P expac &>/dev/null; then
     expac -S '%r' $1
   else
-    pacman -Si $1 2>/dev/null | sed -n '/^Repo/{s/.*: \(.*\)/\1/p;q}'
+    LC_ALL=C pacman -Si $1 2>/dev/null | sed -n '/^Repo/{s/.*: \(.*\)/\1/p;q}'
   fi
 }
 
