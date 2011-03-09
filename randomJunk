@@ -2,11 +2,6 @@
 
 ALLOWEDCHARS='[:alnum:][:punct:]'
 
-if [[ $# -eq 0 ]]; then
-  printf "Usage: %s <string length> [output quantity]" "${0##*/}" >&2
-  exit 1
-fi
+length=${1:-10} quantity=${2:-1}
 
-quantity=${2:-1}
-
-cat /dev/urandom | tr -dc $ALLOWEDCHARS | fold -w $1 | head -n $quantity
+< /dev/urandom tr -dc $ALLOWEDCHARS | fold -w $length | head -n $quantity
