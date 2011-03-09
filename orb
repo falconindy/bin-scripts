@@ -115,7 +115,7 @@ read_response_headers() {
     # end of headers
     [[ $header = $'\r' ]] && break
 
-    (( verbose)) && printf '%s: %s\n' "$header" "$value"
+    (( verbose )) && printf '%s: %s\n' "$header" "$value"
 
     header=$(tr '[:upper:]' '[:lower:]' <<< ${header//-/_})
     read -r -d $'\r' "$header" <<< "$value"
