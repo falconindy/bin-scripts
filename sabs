@@ -22,14 +22,14 @@ getrepo() {
 for pkg; do
   # read only the first, repo is only of mild importance
   read repo _ < <(getrepo $pkg)
-  [[ -z $repo ]] && { printf "error: package \`%s' not found" "$pkg"; continue; }
+  [[ -z $repo ]] && { printf "error: package \`%s' not found\n" "$pkg"; continue; }
 
   case $repo in
     @(community|multilib)*) repo=community ;;
     *) repo=packages ;;
   esac
 
-  [[ -d $pkg ]] && { printf "error: directory \`%s' already exists" "$pkg"; continue; }
+  [[ -d $pkg ]] && { printf "error: directory \`%s' already exists\n" "$pkg"; continue; }
 
   svn export "$svnrepo/$repo/$pkg/trunk" $pkg >/dev/null &&
     printf ":: checked out %s\n" "$pkg" ||
