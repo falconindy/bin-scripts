@@ -5,32 +5,30 @@
 type -P zenity >/dev/null || { printf "zenity binary not found!\n"; exit 1; } >&2
 
 # files: change these if needed/wanted
-WGETFIFO=/tmp/wgetfifo
-COOKIEFILE=~/.config/jumanji/cookies
+wgetfifo=/tmp/wgetfifo
+cookiefile=~/.config/jumanji/cookies
 
 (( $# == 0 )) && exit
 src=$1
 dst=$(zenity --file-selection --filename="$DEFAULT_DIR/${src##*/}" --directory --save)
 
 # progs: less likely you'll want to change these
-WGET=$(type -P wget)
-ZENITY=$(type -P zenity)
-WGETCMD=("$WGET" -c --load-cookies "$COOKIEFILE" "$src" -O "$dst")
-ZENITYCMD=("$ZENITY" --progress --auto-close --title "Downloading to $dst" --text "$src")
+_wget() { wget -c --load-cookies "$cookiefile" "$src" -O "$dst"; }
+_zenity() { zenity --progress --auto-close --title "Downloading to $dst" --text "$src"; }
 
 # insure that wget is killed if the script ends before it does
 trap_exit() {
-  [[ -p "$WGETFIFO" ]] && rm -f "$WGETFIFO"
+  [[ -p "$wgetfifo" ]] && rm -f "$wgetfifo"
   [[ -d /proc/$wgetpid ]] && kill $wgetpid
 }
 trap 'trap_exit' HUP INT EXIT
 
 # it's not possible to tie wget directly to zenity because we need wget's PID
 # in order to kill it when the cancel button is pressed on the zenity dialog.
-[[ ! -p $WGETFIFO ]] && { mkfifo $WGETFIFO || exit 2; }
+[[ ! -p $wgetfifo ]] && { mkfifo $wgetfifo || exit 2; }
 
-"${WGETCMD[@]}" "$@" &> "$WGETFIFO" &
+_wget "$@" &> "$wgetfifo" &
 wgetpid=$!
 
-"${ZENITYCMD[@]}" < <(sed -u 's/ *[0-9]*K[\ \.]\+\([0-9]\+\)%.*/\1/p' < "$WGETFIFO")
+_zenity < <(sed -u 's/ *[0-9]*K[\ \.]\+\([0-9]\+\)%.*/\1/p' < "$wgetfifo")
 
