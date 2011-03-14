@@ -57,5 +57,5 @@ for arg; do
 done
 
 aria2c -j 10 --dir "$PACCACHE" -i - < <(printf "%s\n" "${manifest[@]}")
-(( DL_ONLY )) || pacman "${ARGS[@]}"
+(( DL_ONLY )) || exec pacman "${ARGS[@]}"
 
