@@ -12,7 +12,7 @@ trap_exit() {
 
 trap 'trap_exit' 0 TERM HUP QUIT INT
 
-cat > "$SRC" << EOF
+cat > "$SRC" <<HEREDOCTHEREDOCEVERYWHEREADOCDOC
 #define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>
@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
   $@
   return 0;
 }
-EOF
+HEREDOCTHEREDOCEVERYWHEREADOCDOC
 
 $CC $CFLAGS $SRC -o "$OUT" && "$OUT"
 
