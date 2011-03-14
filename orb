@@ -98,7 +98,8 @@ Connection: Keep-Alive\r
 # response handlers
 read_response_code() {
   read -r -u 4 header resp status
-  (( verbose)) && printf '%s: %s %s\n' "$header" "$resp" "$status"
+  (( verbose )) && printf '%s: %s %s\n' "$header" "$resp" "$status"
+
   if [[ $resp ]]; then
     if (( resp == 404 )); then
       die "package \`%s' not found" "$target"
@@ -110,6 +111,8 @@ read_response_code() {
 }
 
 read_response_headers() {
+  local header
+
   # read response until the end of the headers
   while IFS=': ' read -r -u 4 header value; do
     # end of headers
@@ -136,7 +139,7 @@ read_response_headers() {
 }
 
 read_buffered() {
-  fd=$1 len=$2
+  local actual fd=$1 len=$2
 
   while (( len > 0 )); do
     (( len > bufsiz )) && readlen=$bufsiz || readlen=$len
@@ -146,6 +149,8 @@ read_buffered() {
 }
 
 read_response_body() {
+  local len
+
   if (( content_length )); then
     read_buffered 4 $content_length | $content_encoding | $content_type
   elif [[ "$transfer_encoding" = chunked ]]; then
@@ -159,7 +164,7 @@ read_response_body() {
         break
       fi
 
-      read_buffered 4 $len                  # read response body
+      read_buffered 4 $len                  # read chunk
 
       read -r -n 2 -u 4 _                   # consume \r\n
     done | $content_encoding | $content_type
