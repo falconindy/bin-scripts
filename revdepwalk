@@ -1,0 +1,24 @@
+#!/bin/bash
+#
+# walk sync DBs to find reverse depends
+#
+
+: ${maxdepth:=0}
+
+declare -A walked
+declare -i depth=0
+
+walkdeps() {
+  for pkg in $(expac -S '%N' $1); do
+    printf '%s\n' "$pkg"
+    if [[ -z ${walked[$pkg]} ]] && (( maxdepth == 0 || depth <= maxdepth )); then
+      walked[$pkg]=1
+      (( ++depth ))
+      walkdeps $pkg
+      (( depth-- ))
+    fi
+  done
+}
+
+walkdeps $1 | sort -u
+
