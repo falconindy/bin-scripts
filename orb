@@ -23,6 +23,7 @@ usage() {
   printf -- '  -d    download target(s)\n'
   printf -- '  -i    show package info for target(s)\n'
   printf -- '  -m    search for target(s) by maintainer\n'
+  printf -- '  -r    raw output\n'
   printf -- '  -s    search for target(s)\n\n'
   printf -- ' Options:\n'
   printf -- '  -h    display this help message and exit\n'
@@ -175,7 +176,7 @@ read_response_body() {
   local len
 
   if (( content_length )); then
-    read_buffered 4 $content_length | $content_encoding | $content_type
+    read_buffered 4 $content_length | $content_encoding | ${raw:-$content_type}
   elif [[ "$transfer_encoding" = chunked ]]; then
     while true; do
       read -r -d $'\r\n' -u 4 len           # read length, consume \r
@@ -190,9 +191,9 @@ read_response_body() {
       read_buffered 4 $len                  # read chunk
 
       read -r -n 2 -u 4 _                   # consume \r\n
-    done | $content_encoding | $content_type
+    done | $content_encoding | ${raw:-$content_type}
   else
-    $content_encoding <&4 | $content_type
+    $content_encoding <&4 | ${raw:-$content_type}
   fi
 }
 
@@ -200,13 +201,14 @@ read_response_body() {
 trap 'exec 4<&-' 0 QUIT
 
 # main()
-while getopts ':dghimsv' opt; do
+while getopts ':dghimrsv' opt; do
   case $opt in
     d) uri=$fmt_pkgpath ;;
     g) uri=$fmt_pbpath ;;
     h) usage ;;
     i) uri=$fmt_rpcpath qtype=info ;;
     m) uri=$fmt_rpcpath qtype=msearch ;;
+    r) raw=cat ;;
     s) uri=$fmt_rpcpath qtype=search ;;
     v) verbose=1 ;;
     ?) die '%s: invalid option -- '\''%s'\' "${0##*/}" "$OPTARG"
