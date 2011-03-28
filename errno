@@ -1,0 +1,41 @@
+#!/bin/bash
+#
+# tool to convert symbols like EPERM to their numeric values and vice versa
+#
+
+shopt -s extglob
+
+base=/usr/include/asm-generic/errno-base.h
+upper=/usr/include/asm-generic/errno.h
+
+exec 0< <(cat "$base" "$upper")
+
+numeric_to_symbol() {
+  awk '/^#define/ && $3 == '"$1"' { printf "%s = '$1'\n",$2; exit 1; }'
+}
+
+symbol_to_numeric() {
+  awk '/^#define/ && $2 == "'"$1"'" { printf "'$1' = %s\n",$3; exit 1; }'
+}
+
+perror() {
+  printf '#include <errno.h>
+    #include <string.h>
+    int main(void) { errno = %s; perror("message"); return 0; }
+    ' "$1" | gcc -x c -; [[ -x ./a.out ]] && ./a.out; rm -f ./a.out
+}
+
+[[ $1 ]] || { printf 'usage: %s [symbol|errno]\n' "${0##*/}"; exit 1; }>&2
+
+declare -u arg=$1
+
+# if its numeric, try to get the symbol
+case "$arg" in
+  +([[:digit:]])) numeric_to_symbol "$arg" ;;
+  +([[:upper:]])) symbol_to_numeric "$arg" ;;
+  *) printf 'unknown input: %s\n'>&2; exit 1 ;;
+esac
+
+# if successful (awk returns error) print the error message
+(( $? )) && perror "$arg"
+
