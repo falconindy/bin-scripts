@@ -52,7 +52,8 @@ info() {
 }
 
 urlencode() {
-  printf '%s' "$*" | awk 'BEGIN {
+  printf '%s' "$*" | awk '
+  BEGIN {
     split("0123456789ABCDEF", hextab, "")
     for (i = 1; i <= 255; ++i) {
       ord[sprintf("%c", i) ""] = i + 0
