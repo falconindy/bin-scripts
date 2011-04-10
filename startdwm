@@ -1,10 +1,25 @@
 #!/bin/bash
 
+declare -i _runonce=0
+
+# start terminals here so that they're explicitly started
+# _after_ the consolekit session is created.
+runonce() {
+  runonce=1
+
+  urxvtd -q -o -f
+  urxvtc -name tmux -geometry 122x77 -e tmux -L main attach
+  urxvtc -name htop -e htop
+  urxvtc -name ncmpcpp -e ncmpcpp
+  urxvtc -name werk
+}
+
 config="${XDG_CONFIG_HOME:-$HOME/.config}/conky/conkyrc"
 
 conky -c "$config" | while read out; do
   xsetroot -name "$out";
 done | while true; do
+  (( _runonce )) || runonce &
   dwm 2> ~/.dwm.log
 done
 
