@@ -4,7 +4,7 @@
 # emulates the 'tree' utility
 #
 
-shopt -s nullglob dotglob
+shopt -s nullglob
 
 # indent size
 IND_SZ=3
@@ -40,8 +40,9 @@ walk() {
   popd &>/dev/null
 }
 
-while getopts "d" opt; do
+while getopts "ad" opt; do
   case $opt in
+    a) shopt -s dotglob ;;
     d) DIRS_FIRST=1 ;;
   esac
 done
