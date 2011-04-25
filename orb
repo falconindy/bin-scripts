@@ -52,27 +52,16 @@ info() {
 }
 
 urlencode() {
-  printf '%s' "$*" | awk '
-  BEGIN {
-    split("0123456789ABCDEF", hextab, "")
-    for (i = 1; i <= 255; ++i) {
-      ord[sprintf("%c", i) ""] = i + 0
-    }
-  }
+  local url=$*
+  declare -i len=${#url}
 
-  {
-    for (i = 1; i <= length($0); ++i) {
-      c = substr($0, i, 1)
-      if (c ~ /[a-zA-Z0-9.-]/) {
-        printf "%c",c
-      } else if (c == " ") {
-        printf "+"
-      } else {
-        printf "%%%s%s",hextab[int(ord[c] / 16) + 1],hextab[ord[c] % 16 + 1]
-      }
-    }
-    printf "\n"
-  }'
+  for (( i = 0; i < len; i++ )); do
+    case "${url:i:1}" in
+      [a-zA-Z0-9.-]) printf "$char" ;;
+      ' ') printf + ;;
+      *) printf '%%%X' "'$char" ;;
+    esac
+  done
 }
 
 
