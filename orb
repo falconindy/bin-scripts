@@ -52,11 +52,12 @@ info() {
 }
 
 urlencode() {
-  local url=$*
+  local char url=$*
   declare -i len=${#url}
 
   for (( i = 0; i < len; i++ )); do
-    case "${url:i:1}" in
+    char=${url:i:1}
+    case "$char" in
       [a-zA-Z0-9.-]) printf "$char" ;;
       ' ') printf + ;;
       *) printf '%%%X' "'$char" ;;
