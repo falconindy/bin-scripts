@@ -52,7 +52,7 @@ info() {
 }
 
 urlencode() {
-  local char url=$*
+  local i char url=$*
   declare -i len=${#url}
 
   for (( i = 0; i < len; i++ )); do
@@ -126,7 +126,7 @@ read_response_code() {
 }
 
 read_response_headers() {
-  local header
+  local header value
 
   # read response until the end of the headers
   while IFS=': ' read -r -u 4 header value; do
