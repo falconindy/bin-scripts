@@ -52,7 +52,7 @@ info() {
 }
 
 urlencode() {
-  local i char url=$*
+  local i= char= url=$*
   declare -i len=${#url}
 
   for (( i = 0; i < len; i++ )); do
@@ -126,7 +126,7 @@ read_response_code() {
 }
 
 read_response_headers() {
-  local header value
+  local header= value=
 
   # read response until the end of the headers
   while IFS=': ' read -r -u 4 header value; do
@@ -154,7 +154,7 @@ read_response_headers() {
 }
 
 read_buffered() {
-  local actual fd=$1 len=$2
+  local actual= fd=$1 len=$2
 
   while (( len > 0 )); do
     (( len > bufsiz )) && readlen=$bufsiz || readlen=$len
@@ -164,7 +164,7 @@ read_buffered() {
 }
 
 read_response_body() {
-  local len
+  local len=
 
   if (( content_length )); then
     read_buffered 4 $content_length | $content_encoding | ${raw:-$content_type}
