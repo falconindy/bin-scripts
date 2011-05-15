@@ -1,0 +1,52 @@
+#!/bin/bash
+
+### Paths ################################
+declare -r isoroot=/mnt/Gluttony/iso
+declare -r imgroot=/mnt/Haven/qemu-img
+
+### Defaults #############################
+declare mem="-m 1024"
+declare cpus="-smp 4"
+declare net="-net nic,model=virtio -net vde"
+
+### Machines #############################
+# must all start with 'vm_'
+
+vm_beatbox() {
+  #cdrom="-cdrom $isoroot/archlinux-2011.05.08-core-x86_64.iso -boot d"
+
+  opts=(-nographic)
+  drives=(
+    "-drive file=$imgroot/beatbox.qcow2,if=virtio"
+  )
+}
+
+vm_butter() {
+  #cdrom="-cdrom $isoroot/archlinux-2011.05.08-core-x86_64.iso -boot d"
+
+  opts=(-nographic)
+  drives=(
+    "-drive file=$imgroot/butter.0.qcow2,if=virtio"
+    "-drive file=$imgroot/butter.1.qcow2,if=virtio"
+    "-drive file=$imgroot/butter.2.qcow2,if=virtio"
+    "-drive file=$imgroot/butter.3.qcow2,if=virtio"
+  )
+}
+
+### Launcher #############################
+
+if [[ -z $1 ]]; then
+  printf 'Available VMs:\n'
+  printf '  %s\n' $(sed -n 's/^vm_\([^(;$]\+\).*/\1/p' "$0")
+  exit 0
+fi
+
+if ! type -t vm_$1 >/dev/null; then
+  printf 'unknown VM: %s\n' "$1"
+  exit 1
+fi
+
+vm_$1; shift
+
+qemu-kvm "${opts[@]}" $cpus $mem ${drives[*]} $net $cdrom "$@"
+
