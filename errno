@@ -22,7 +22,7 @@ perror() {
   printf '#include <errno.h>
     #include <string.h>
     int main(void) { errno = %s; perror("message"); return 0; }
-    ' "$1" | gcc -x c -; [[ -x ./a.out ]] && ./a.out; rm -f ./a.out
+    ' "$1" | gcc -x c - -o /tmp/a.out; [[ -x /tmp/a.out ]] && /tmp/a.out; rm -f /tmp/a.out
 }
 
 [[ $1 ]] || { printf 'usage: %s [symbol|errno]\n' "${0##*/}"; exit 1; }>&2
