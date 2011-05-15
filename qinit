@@ -21,7 +21,7 @@ vm_beatbox() {
   )
 }
 
-vm_butter() {
+vm_cryptic() {
   #cdrom="-cdrom $isoroot/archlinux-2011.05.08-core-x86_64.iso -boot d"
 
   opts=(-nographic)
