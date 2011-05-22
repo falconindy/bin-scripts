@@ -24,11 +24,18 @@ declare -r machines=$XDG_CONFIG_HOME/qemu/machines
 ### Defaults #############################
 declare mem="-m 1024"
 declare cpus="-smp 4"
-declare net="-net nic,model=virtio -net vde"
+declare net="-net vde -net nic,model=virtio"
 
 ### Launcher #############################
 
 . "$machines"
+
+while getopts 'c' flag; do
+  case $flag in
+    c) usecdrom=true ;;
+  esac
+done
+shift $(( OPTIND - 1 ))
 
 if [[ -z $1 ]]; then
   printf 'Available VMs:\n'
@@ -43,5 +50,5 @@ fi
 
 vm_$1; shift
 
-qemu-kvm "${opts[@]}" $cpus $mem ${drives[*]} $net $cdrom "$@"
+exec qemu-kvm "${opts[@]}" $cpus $mem ${drives[@]} $net ${usecdrom:+$cdrom} "$@"
 
