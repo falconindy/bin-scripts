@@ -1,43 +1,38 @@
 #!/bin/bash
+#
+# launcher script for qemu-kvm
+#
+# machines are sourced from a file which defines functions, each
+# specifying options for the particular VM, for example:
+#
+# vm_beatbox() {
+#   cdrom="-cdrom $isoroot/archlinux-2011.05.08-core-x86_64.iso -boot d"
+#
+#   opts=(-nographic)
+#   drives=(
+#     "-drive file=$imgroot/beatbox.1.qcow2,if=virtio"
+#     "-drive file=$imgroot/beatbox.2.qcow2,if=virtio"
+#   )
+# }
+#
 
 ### Paths ################################
 declare -r isoroot=/mnt/Gluttony/iso
 declare -r imgroot=/mnt/Haven/qemu-img
+declare -r machines=$XDG_CONFIG_HOME/qemu/machines
 
 ### Defaults #############################
 declare mem="-m 1024"
 declare cpus="-smp 4"
 declare net="-net nic,model=virtio -net vde"
 
-### Machines #############################
-# must all start with 'vm_'
-
-vm_beatbox() {
-  #cdrom="-cdrom $isoroot/archlinux-2011.05.08-core-x86_64.iso -boot d"
-
-  opts=(-nographic)
-  drives=(
-    "-drive file=$imgroot/beatbox.qcow2,if=virtio"
-  )
-}
-
-vm_cryptic() {
-  #cdrom="-cdrom $isoroot/archlinux-2011.05.08-core-x86_64.iso -boot d"
-
-  opts=(-nographic)
-  drives=(
-    "-drive file=$imgroot/butter.0.qcow2,if=virtio"
-    "-drive file=$imgroot/butter.1.qcow2,if=virtio"
-    "-drive file=$imgroot/butter.2.qcow2,if=virtio"
-    "-drive file=$imgroot/butter.3.qcow2,if=virtio"
-  )
-}
-
 ### Launcher #############################
+
+. "$machines"
 
 if [[ -z $1 ]]; then
   printf 'Available VMs:\n'
-  printf '  %s\n' $(sed -n 's/^vm_\([^(;$]\+\).*/\1/p' "$0")
+  printf '  %s\n' $(sed -n 's/^vm_\([^(;$]\+\).*/\1/p' "$machines")
   exit 0
 fi
 
