@@ -17,9 +17,9 @@
 #
 
 ### Paths ################################
-declare -r isoroot=/mnt/Gluttony/iso
-declare -r imgroot=/mnt/Haven/qemu-img
 declare -r machines=$XDG_CONFIG_HOME/qemu/machines
+declare isoroot=/mnt/Gluttony/iso
+declare imgroot=/mnt/Haven/qemu-img
 
 ### Defaults #############################
 declare mem="-m 1024"
