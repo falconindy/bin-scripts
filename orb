@@ -158,9 +158,9 @@ read_buffered() {
 
   while (( len > 0 )); do
     (( len > bufsiz )) && readlen=$bufsiz || readlen=$len
-    actual=$(<&$fd dd bs=1 count=$readlen 2>/dev/null | tee >(wc -c) >&2)
+    actual=$(<&$fd dd bs=1 count=$readlen 2>/dev/null | tee >(wc -c) >&5)
     (( len -= actual ))
-  done 2>&1
+  done 5>&1
 }
 
 read_response_body() {
