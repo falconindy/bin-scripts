@@ -18,16 +18,20 @@ fmt_rpcpath='/rpc.php?type=%s&arg=%s'
 fmt_pbpath='/packages/%s/PKGBUILD'
 
 usage() {
-  printf -- 'Usage: %s operation target...\n\n' "${0##*/}"
-  printf -- ' Operations:\n'
-  printf -- '  -d    download target(s)\n'
-  printf -- '  -i    show package info for target(s)\n'
-  printf -- '  -m    search for target(s) by maintainer\n'
-  printf -- '  -r    raw output\n'
-  printf -- '  -s    search for target(s)\n\n'
-  printf -- ' Options:\n'
-  printf -- '  -h    display this help message and exit\n'
-  printf -- '  -v    show http response headers\n'
+  cat <<EOF
+Usage: ${0##*/} operation target...
+
+ Operations:
+  -d    download target(s)
+  -i    show package info for target(s)
+  -m    search for target(s) by maintainer
+  -r    raw output
+  -s    search for target(s)
+ Options:
+  -h    display this help message and exit
+  -v    show http response headers
+
+EOF
   exit 1
 } >&2
 
