@@ -1,0 +1,4 @@
+#!/bin/bash
+
+exec git send-email --subject-prefix="$1][PATCH" "${@:2}"
+
