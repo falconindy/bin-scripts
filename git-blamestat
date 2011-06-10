@@ -6,10 +6,10 @@
 # http://stackoverflow.com/questions/4589731/git-blame-statistics
 #
 
-git ls-tree --name-only -r HEAD |
-  file -f - |
-  sed '/: .*text/s/: .*//' |
-  while read filename; do git blame -M -C "$filename"; done |
+IFS=$'\n' read -r -d '' -a all < \
+  <(git ls-tree --name-only -r HEAD | file -f - | sed '/: .*text/s/: .*//')
+
+for file in "${@:-${all[@]}}"; do git blame -M -C "$file"; done |
   sed -r 's/.*\((.*)[0-9]{4}-[0-9]{2}-[0-9]{2} .*/\1/;s/ +$//' |
   sort |
   uniq -c |
