@@ -1,4 +1,4 @@
 #!/bin/bash
 
-exec git send-email --subject-prefix="$1][PATCH" "${@:2}"
+exec git send-email --to arch-projects@archlinux.org --subject-prefix="$1][PATCH" "${@:2}"
 
