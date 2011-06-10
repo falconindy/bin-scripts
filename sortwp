@@ -1,26 +1,29 @@
 #!/bin/bash
 
-type -P identify >/dev/null || { echo "identify not found -- missing imagemagick?"; exit 1; }
+if ! type -P identify >/dev/null; then
+  echo "identify not found -- missing imagemagick?"
+  exit 1
+fi
 
 wallpaper_root="$HOME/pic/wallpaper"
 
 while read pic; do
-    IFS=$'\t' read -r -a dim <(identify $pic | sed -n 's/.* \([0-9]\{3,4\}\)x\([0-9]\{3,4\}\) .*/\1\t\2/p')
+  IFS=$'\t' read -r -a dim < <(identify $pic | sed -n 's/.* \([0-9]\{3,4\}\)x\([0-9]\{3,4\}\) .*/\1\t\2/p')
 
-    case "$(echo "scale=3;${dim[0]} / ${dim[1]}" | bc)" in
-        "1.777") ratio="16:9" ;;
-        "1.600") ratio="16:10" ;;
-        "1.333") ratio="4:3" ;;
-        "1.250") ratio="5:4" ;;
-        *) ratio="other"
-           prefix="${dim[0]}x${dim[1]}_" ;;
-    esac
+  case "$(echo "scale=3;${dim[0]} / ${dim[1]}" | bc)" in
+    "1.777") ratio="16:9" ;;
+    "1.600") ratio="16:10" ;;
+    "1.333") ratio="4:3" ;;
+    "1.250") ratio="5:4" ;;
+    *) ratio="other"
+       prefix="${dim[0]}x${dim[1]}_" ;;
+  esac
 
-    if [[ -z $ratio && ! -d "$wallpaper_root/$ratio/${dim[0]}x${dim[1]}" ]]; then
-        mkdir -vp "$wallpaper_root/$ratio/${dim[0]}x${dim[1]}"
-    fi
+  if [[ $ratio && ! -d "$wallpaper_root/$ratio/${dim[0]}x${dim[1]}" ]]; then
+    mkdir -vp "$wallpaper_root/$ratio/${dim[0]}x${dim[1]}"
+  fi
 
-    mv -v "$pic" "$wallpaper_root/$ratio/$prefix$(basename $pic)"
-    unset prefix
+  mv -v "$pic" "$wallpaper_root/$ratio/$prefix$(basename $pic)"
+  unset prefix
 done < <(find . -maxdepth 1 -type f)
 
