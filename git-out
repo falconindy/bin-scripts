@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# behavior like mercurial's "out" command
+#
+
+read -r _ curbranch < <(git branch | grep '^\*')
+remote=$(git config branch.$curbranch.remote 2>/dev/null)
+merge=$(git config branch.$curbranch.merge 2>/dev/null)
+
+printf 'Comparing with %s/%s\n' "${remote:-origin}" "${merge:-master}"
+git cherry -v ${remote:-origin}/${merge:-master}
