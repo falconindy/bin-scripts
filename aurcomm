@@ -13,7 +13,7 @@ printf -v COFF '\e[0m'
 
 commfilter() {
   xmllint --html --xpath \
-    '//div[@class="pgbox"]/div[@class="comment-header"]/..' - 2>/dev/null |\
+    '//div[@class="pgbox"]/div[@class="comment-header"]/..' - 2>/dev/null |
     sed 's/<[^>]\+>//g;s/\t//g;s/\r$//
         /Comment by:/,/[[:alnum:]]\+/{/^$/d};
         s/&gt;/>/g;s/&lt;/</g;
@@ -26,27 +26,21 @@ commfilter() {
 
 }
 
-getpkgID() {
-  curl -Gs --data-urlencode "arg=$1" "$AURURL/rpc.php?type=info" | awk '
-    BEGIN  { RS=","; FS=":" }
-    /type/ { if ($2 ~ /error/) exit }
-    /ID/   { gsub(/\"/, "", $3); print $3; exit }'
-}
-
 [[ $1 = -a ]] && { showall=$ALL; shift; }
 
 if ! (( $# )); then
   if [[ ! -f PKGBUILD ]]; then
-    printf "error: no PKGBUILD found and no arg provided\n"
+    printf "error: no PKGBUILD found and no package name provided!\n"
     exit 1
   fi
   eval $(grep '^pkgname=' PKGBUILD)
 fi
 
 pkgname=${1:-$pkgname}
-
-pkgID=$(getpkgID $pkgname)
-[[ $pkgID ]] || { printf "error: package \`%s' not found" "$pkgname"; exit 1; }
+if ! pkgID=$(cower -i --format '%i' "$1" 2>/dev/null); then
+  printf "error: package \`%s' not found\n" "$pkgname"
+  exit 1
+fi
 
 curl -s "$AURURL/packages.php?ID=$pkgID$showall" | commfilter | fmt -sw$(tput cols)
 
