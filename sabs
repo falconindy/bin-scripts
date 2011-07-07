@@ -7,7 +7,25 @@
 
 shopt -s extglob
 
+absroot=/var/abs
 svnrepo="svn://svn.archlinux.org"
+splitpkgcache=$HOME/.cache/splitpkg.cache
+
+build_split_pkg_cache() {
+  printf '==> building split package cache...\n' >&2
+  mkdir -p $HOME/.cache
+
+  printf 'declare -A splitcache\n'
+  while read -r -d '' path; do
+    (
+      . "$path" || { printf 'failed to source %s\n' "$path"; exit; }
+      pkgbase=${pkgbase:-$pkgname}
+      for pkg in "${pkgname[@]}"; do
+        printf 'splitcache[%s]=%s\n' "$pkg" "$pkgbase"
+      done
+    )
+  done < <(\grep -Zlr '^pkgname=(' "$ABSROOT"/*)
+} >"$splitpkgcache"
 
 getrepo() {
   if type -P expac &>/dev/null; then
@@ -19,7 +37,18 @@ getrepo() {
 
 [[ -z $1 ]] && { printf "Usage: %s targets...\n" "${0##*/}"; exit 1; }
 
+if [[ ! -f $splitpkgcache && -d $absroot ]]; then
+  build_split_pkg_cache
+fi
+[[ -s $splitpkgcache ]] && . "$splitpkgcache"
+
 for pkg; do
+  # check split package cache first
+  if [[ ${splitcache[$pkg]} ]]; then
+    printf '==> %s is built by %s\n' "$pkg" "${splitcache[$pkg]}"
+    pkg=${splitcache[$pkg]}
+  fi
+
   # read only the first, repo is only of mild importance
   read repo _ < <(getrepo $pkg)
   [[ -z $repo ]] && { printf "error: package \`%s' not found\n" "$pkg"; continue; }
