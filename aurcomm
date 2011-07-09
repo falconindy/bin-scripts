@@ -37,7 +37,7 @@ if ! (( $# )); then
 fi
 
 pkgname=${1:-$pkgname}
-if ! pkgID=$(cower -i --format '%i' "$1" 2>/dev/null); then
+if ! pkgID=$(cower -i --format '%i' "$pkgname" 2>/dev/null); then
   printf "error: package \`%s' not found\n" "$pkgname"
   exit 1
 fi
