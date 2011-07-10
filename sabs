@@ -44,9 +44,10 @@ fi
 
 for pkg; do
   # check split package cache first
-  if [[ ${splitcache[$pkg]} ]]; then
+  provider=${splitcache[$pkg]}
+  if [[ $provider && $pkg != "$provider" ]]; then
     printf '==> %s is built by %s\n' "$pkg" "${splitcache[$pkg]}"
-    pkg=${splitcache[$pkg]}
+    pkg=$provider
   fi
 
   # read only the first, repo is only of mild importance
