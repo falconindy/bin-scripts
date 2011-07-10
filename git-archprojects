@@ -1,4 +1,9 @@
 #!/bin/bash
 
+if (( $# < 2 )); then
+  echo "usage: ${0##*/}: <project> <options to git send-email>"
+  exit 1
+fi
+
 exec git send-email --to arch-projects@archlinux.org --subject-prefix="$1][PATCH" "${@:2}"
 
