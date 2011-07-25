@@ -7,10 +7,41 @@ normfgcolor="#FFFFFF"
 selbgcolor="#3465A4"
 selfgcolor="#FFFFFF"
 
-cmd=$(dmenu_path | dmenu -i -b -fn $font -nb $normbgcolor -nf $normfgcolor -sb $selbgcolor -sf $selfgcolor)
+cache=~/.cache/dmenu
 
+dmenu_opts=(
+  -i
+  -b
+  -fn "$font"
+  -nb "$normbgcolor"
+  -nf "$normfgcolor"
+  -sb "$selbgcolor"
+  -sf "$selfgcolor"
+)
+
+regen_cache() {
+  find "${paths[@]}" -maxdepth 1 \( -type f -o -type l \) -executable -printf '%f\n' |
+      sort -u >"$cache"
+}
+
+
+getbins() {
+  IFS=':' read -r -a paths <<< "$PATH"
+  for path in "${paths[@]}"; do
+    if [[ $path -nt $cache ]]; then
+      regen_cache
+      break
+    fi
+  done
+  cat "$cache"
+}
+
+cmd=$(getbins | dmenu "${dmenu_opts[@]}")
+
+# dispatch!
 case $cmd in
   ncmpcpp|htop|vim)   exec $term -name $cmd -e $cmd ;;
   tmux)               exec $term -name tmux -geometry 122x77 -e tmux -L main attach ;;
   *)                  exec $cmd
 esac
+
