@@ -1,0 +1,256 @@
+#!/bin/bash
+#
+# cachemoney - clean yo pacman cache, dawg
+#
+
+shopt -s extglob
+
+declare -A packages=() ignore=() whitelist=()
+declare -a candidates=() cmdopts=()
+declare -i delete=0 diskspace=0 dryrun=0 filecount=0 keep=3 move=0 totalsaved=0
+declare    cachedir=/var/cache/pacman/pkg movedir= scanarch=
+
+msg() {
+  local mesg=$1; shift
+  printf "==> $mesg\n" "$@"
+} >&2
+
+msg2() {
+  local mesg=$1; shift
+  printf "  -> $mesg\n" "$@"
+} >&2
+
+error() {
+  local mesg=$1; shift
+  printf "==> ERROR: $mesg\n" "$@"
+} >&2
+
+die() {
+  error "$@"
+  exit 1
+}
+
+size_to_human() {
+  awk -v size="$1" '
+  BEGIN {
+    suffix[1] = "B"
+    suffix[2] = "KiB"
+    suffix[3] = "MiB"
+    suffix[4] = "GiB"
+    suffix[5] = "TiB"
+    count = 1
+
+    while (size > 1024) {
+      size /= 1024
+      count++
+    }
+
+    printf("%.3f %s", size, suffix[count])
+  }'
+}
+
+# gather packages
+gather() {
+  local -r pkg_re='(.+)-([^-]+-[0-9]+)-([^.]+)\.pkg.*'
+  local key= pkg= pkgname= pkgver= arch=
+  local -i del=
+  local -a pkgs=
+
+  while read -r -d '' pkg; do
+    if [[ $pkg =~ $pkg_re ]]; then
+      pkgname=${BASH_REMATCH[1]}
+      pkgver=${BASH_REMATCH[2]}
+      arch=${BASH_REMATCH[3]}
+    fi
+
+    # match architecture if provided by user
+    [[ $scanarch && $arch != "$scanarch" ]] && continue
+
+    # skip ignored packages
+    [[ ${ignore[$pkg]} ]] && continue
+
+    # if we have a whitelist, only honor those packages
+    (( ${#whitelist[*]} )) && [[ -z ${whitelist[$pkgname]} ]] && continue
+
+    if [[ ! ${packages[$pkgname|$arch]} ]]; then
+      packages[$pkgname|$arch]=$pkg
+    else
+      packages[$pkgname|$arch]+=,$pkg
+    fi
+  done < <(printf '%s\0' *.pkg.tar?(.+([^.])) | sort -zV)
+
+  (( ${#packages[@]} )) || return
+
+  # prune, baby prune
+  for key in "${!packages[@]}"; do
+    IFS=, read -r -a pkgs <<< "${packages[$key]}"
+    if (( ${#pkgs[@]} > keep )); then
+
+      del=$(( ${#pkgs[@]} - keep ))
+      (( del > 0 )) || continue
+
+      for pkg in "${pkgs[@]:0:del}"; do
+        (( ++filecount ))
+        (( diskspace )) && (( totalsaved += $(stat -c %s "$pkg") ))
+        candidates+=("$pkg")
+      done
+    fi
+  done
+}
+
+summarize() {
+  local del= pkg=
+
+  if (( delete )); then
+    printf -v output 'finished: %d packages removed' "$filecount"
+  elif (( move )); then
+    printf -v output "finished: %d packages moved to \`%s'" "$filecount" "$movedir"
+  elif (( dryrun )); then
+    if (( verbose )); then
+      msg "Candidate packages:"
+      while read -rd '' pkg; do
+        IFS='|' read -r name arch <<< "$pkg"
+        IFS=',' read -r -a pkgs <<< "${packages[$pkg]}"
+
+        del=$(( ${#pkgs[@]} - keep ))
+        (( del > 0 )) || continue
+
+        if (( verbose >= 3 )); then
+          printf '%s (%s):\n' "$name" "$arch"
+          printf '  %s\n' "${pkgs[@]:0:del}"
+        elif (( verbose >= 2 )); then
+          printf "$PWD/%s\n" "${pkgs[@]:0:del}"
+        else
+          printf '%s\n' "${pkgs[@]:0:del}"
+        fi
+
+      done < <(printf '%s\0' "${!packages[@]}" | sort -z)
+      printf '\n' >&2
+    fi
+
+    printf -v output 'finished dry run: %d packages would be removed' "$filecount"
+  fi
+
+  (( diskspace )) && output+=" (diskspace saved: $(size_to_human "$totalsaved"))"
+  msg "$output"
+}
+
+runcmd() {
+  if (( needsroot )); then
+    msg "Privilege escalation required"
+    if sudo -v &>/dev/null && sudo -l &>/dev/null; then
+      sudo "$@"
+    else
+      printf '%s ' 'root'
+      su -c "$(printf '%q ' "$@")"
+    fi
+  else
+    "$@"
+  fi
+}
+
+usage() {
+  cat <<EOF
+usage: ${0##*/} <operation> [options] [targets...]
+
+  Operations:
+    -d               perform a dry run, only finding candidate packages.
+    -m  <movedir>    move candidate packages to 'movedir'.
+    -r               remove candidate packages.
+
+  Options:
+    -a  <arch>       scan for 'arch' (default: all architectures).
+    -c  <cachedir>   scan 'cachedir' for packages (default: /var/cache/pacman/pkg).
+    -f               apply force to mv(1) and rm(1) operations.
+    -h               display this help message.
+    -i <pkgs>        ignore 'pkgs', which is a comma separated. Alternatively,
+                     specify '-' to read package names from stdin, newline delimited.
+    -k  <num>        keep 'num' of each package in 'cachedir' (default: 3).
+    -s               show diskspace saved by the operation.
+    -v               increase verbosity. specify up to 3 times.
+
+EOF
+}
+
+if (( ! UID )); then
+  error "Do not run this script as root. You will be prompted for privilege escalation."
+  exit 42
+fi
+
+while getopts ':a:c:dfhi:k:m:rsuv' opt; do
+  case $opt in
+    a) scanarch=$OPTARG ;;
+    c) cachedir=$OPTARG ;;
+    d) dryrun=1 ;;
+    f) cmdopts=(-f) ;;
+    h) usage
+      exit 0 ;;
+    i) if [[ $OPTARG = '-' ]]; then
+         [[ ! -t 0 ]] && IFS=$'\n' read -r -d '' -a ign
+       else
+         IFS=',' read -r -a ign <<< "$OPTARG"
+       fi
+       for i in "${ign[@]}"; do
+         ignore[$i]=1
+       done
+      unset i ign ;;
+    k) keep=$OPTARG
+      if [[ $keep != +([[:digit:]]) ]]; then
+        die 'argument to option -k must be a non-negative integer'
+      fi ;;
+    m) move=1 movedir=$OPTARG ;;
+    r) delete=1 ;;
+    s) diskspace=1 ;;
+    u) IFS=$'\n' read -r -d '' -a ign < <(pacman -Qq)
+       for i in "${ign[@]}"; do
+         ignore[$i]=1
+       done
+      unset i ign ;;
+    v) (( ++verbose )) ;;
+    :) die "option '--%s' requires an argument" "$OPTARG" ;;
+    ?) die "invalid option -- '%s'" "$OPTARG" ;;
+  esac
+done
+shift $(( OPTIND - 1 ))
+
+# leftover args are a whitelist
+for pkg; do
+  whitelist[$pkg]=1
+done
+
+# sanity checks
+case $(( dryrun+delete+move )) in
+  0) die "no operation specified (use -h for help)" ;;
+  [^1]) die "only one operation may be used at a time" ;;
+esac
+
+[[ -d $cachedir ]] ||
+  die "cachedir \`%s' does not exist or is not a directory" "$cachedir"
+
+[[ $movedir && ! -d $movedir ]] &&
+  die "move-to directory \`%s' does not exist or is not a directory" "$movedir"
+
+if (( move || delete )); then
+  # make it an absolute path since we're about to chdir
+  [[ ${movedir:0:1} != '/' ]] && movedir=$PWD/$movedir
+  [[ ! -w $cachedir || ( $movedir && ! -w $movedir ) ]] && needsroot=1
+fi
+
+# gather round, children
+cd "$cachedir"
+if gather && (( ! filecount )); then
+  msg 'no candidate packages found for pruning'
+  exit 1
+fi
+
+# crush. kill. destroy.
+(( verbose )) && cmdopts+=(-v)
+if (( delete )); then
+  runcmd rm "${cmdopts[@]}" "${candidates[@]}"
+elif (( move )); then
+  runcmd mv "${cmdopts[@]}" "${candidates[@]}" "$movedir"
+fi
+
+summarize
+
+exit 0
