@@ -5,8 +5,7 @@
 
 shopt -s extglob
 
-declare -A packages=() ignore=() whitelist=()
-declare -a candidates=() cmdopts=()
+declare -a candidates=() cmdopts=() whitelist=() blacklist=()
 declare -i delete=0 diskspace=0 dryrun=0 filecount=0 keep=3 move=0 totalsaved=0
 declare    cachedir=/var/cache/pacman/pkg movedir= scanarch=
 
@@ -30,14 +29,87 @@ die() {
   exit 1
 }
 
+# reads a list of files on stdin and prints out deletion candidates
+pkgfilter() {
+  # there's whitelist and blacklist parameters passed to this
+  # script after the block of awk
+
+  awk -v keep="$1" -v scanarch="$2" '
+  function parse_filename(filename,       parts, count, i, pkgname, arch) {
+
+    count = split(filename, parts, "-")
+
+    i = 1
+    pkgname = parts[i++]
+    while (i <= count - 3) {
+      pkgname = pkgname "-" parts[i++]
+    }
+
+    arch = substr(parts[count], 1, index(parts[count], ".") - 1)
+
+    # filter on whitelist or blacklist
+    if (wlen && !whitelist[pkgname]) return
+    if (blen && blacklist[pkgname]) return
+
+    if ("" == packages[pkgname,arch]) {
+      packages[pkgname,arch] = filename
+    } else {
+      packages[pkgname,arch] = packages[pkgname,arch] SUBSEP filename
+    }
+  }
+
+  BEGIN {
+    i    = 1
+    wlen = 0
+    blen = 0
+
+    # build whitelist
+    while (ARGV[i] != "--") {
+      whitelist[ARGV[i]] = 1
+      wlen++
+      delete ARGV[i++]
+    }
+
+    # snip out the "--" separator
+    delete ARGV[i++]
+
+    # build blacklist
+    while (i < ARGC) {
+      blacklist[ARGV[i]] = 1
+      blen++
+      delete ARGV[i++]
+    }
+
+    # read package filenames
+    while (getline < "/dev/stdin") {
+      parse_filename($0)
+    }
+  }
+
+  END {
+    for (pkglist in packages) {
+      # idx[1,2] = idx[pkgname,arch]
+      split(pkglist, idx, SUBSEP)
+
+      if (!scanarch || scanarch == idx[2]) {
+        count = split(packages[idx[1], idx[2]], pkgs, SUBSEP)
+        if (count > keep) {
+          for(i = 1; i <= count - keep; i++) {
+            print pkgs[i]
+          }
+        }
+      }
+    }
+  }' "${@:3}"
+}
+
 size_to_human() {
   awk -v size="$1" '
   BEGIN {
-    suffix[1] = "B"
-    suffix[2] = "KiB"
-    suffix[3] = "MiB"
-    suffix[4] = "GiB"
-    suffix[5] = "TiB"
+    suffix[1] = "KiB"
+    suffix[2] = "MiB"
+    suffix[3] = "GiB"
+    suffix[4] = "TiB"
     count = 1
 
     while (size > 1024) {
@@ -45,94 +117,10 @@ size_to_human() {
       count++
     }
 
-    printf("%.3f %s", size, suffix[count])
+    sizestr = sprintf("%.2f", size)
+    sub(/.?0+$/, "", sizestr)
+    printf("%s %s", sizestr, suffix[count])
   }'
-}
-
-# gather packages
-gather() {
-  local -r pkg_re='(.+)-([^-]+-[0-9]+)-([^.]+)\.pkg.*'
-  local key= pkg= pkgname= pkgver= arch=
-  local -i del=
-  local -a pkgs=
-
-  while read -r -d '' pkg; do
-    if [[ $pkg =~ $pkg_re ]]; then
-      pkgname=${BASH_REMATCH[1]}
-      pkgver=${BASH_REMATCH[2]}
-      arch=${BASH_REMATCH[3]}
-    fi
-
-    # match architecture if provided by user
-    [[ $scanarch && $arch != "$scanarch" ]] && continue
-
-    # skip ignored packages
-    [[ ${ignore[$pkg]} ]] && continue
-
-    # if we have a whitelist, only honor those packages
-    (( ${#whitelist[*]} )) && [[ -z ${whitelist[$pkgname]} ]] && continue
-
-    if [[ ! ${packages[$pkgname|$arch]} ]]; then
-      packages[$pkgname|$arch]=$pkg
-    else
-      packages[$pkgname|$arch]+=,$pkg
-    fi
-  done < <(printf '%s\0' *.pkg.tar?(.+([^.])) | sort -zV)
-
-  (( ${#packages[@]} )) || return
-
-  # prune, baby prune
-  for key in "${!packages[@]}"; do
-    IFS=, read -r -a pkgs <<< "${packages[$key]}"
-    if (( ${#pkgs[@]} > keep )); then
-
-      del=$(( ${#pkgs[@]} - keep ))
-      (( del > 0 )) || continue
-
-      for pkg in "${pkgs[@]:0:del}"; do
-        (( ++filecount ))
-        (( diskspace )) && (( totalsaved += $(stat -c %s "$pkg") ))
-        candidates+=("$pkg")
-      done
-    fi
-  done
-}
-
-summarize() {
-  local del= pkg=
-
-  if (( delete )); then
-    printf -v output 'finished: %d packages removed' "$filecount"
-  elif (( move )); then
-    printf -v output "finished: %d packages moved to \`%s'" "$filecount" "$movedir"
-  elif (( dryrun )); then
-    if (( verbose )); then
-      msg "Candidate packages:"
-      while read -rd '' pkg; do
-        IFS='|' read -r name arch <<< "$pkg"
-        IFS=',' read -r -a pkgs <<< "${packages[$pkg]}"
-
-        del=$(( ${#pkgs[@]} - keep ))
-        (( del > 0 )) || continue
-
-        if (( verbose >= 3 )); then
-          printf '%s (%s):\n' "$name" "$arch"
-          printf '  %s\n' "${pkgs[@]:0:del}"
-        elif (( verbose >= 2 )); then
-          printf "$PWD/%s\n" "${pkgs[@]:0:del}"
-        else
-          printf '%s\n' "${pkgs[@]:0:del}"
-        fi
-
-      done < <(printf '%s\0' "${!packages[@]}" | sort -z)
-      printf '\n' >&2
-    fi
-
-    printf -v output 'finished dry run: %d packages would be removed' "$filecount"
-  fi
-
-  (( diskspace )) && output+=" (diskspace saved: $(size_to_human "$totalsaved"))"
-  msg "$output"
 }
 
 runcmd() {
@@ -149,6 +137,43 @@ runcmd() {
   fi
 }
 
+summarize() {
+  local -i filecount=$#
+  local seenarch= seen= arch= name=
+  local -r pkg_re='(.+)-[^-]+-[0-9]+-([^.]+)\.pkg.*'
+
+  if (( delete )); then
+    printf -v output 'finished: %d packages removed' "$filecount"
+  elif (( move )); then
+    printf -v output "finished: %d packages moved to \`%s'" "$filecount" "$movedir"
+  elif (( dryrun )); then
+    if (( verbose )); then
+      msg "Candidate packages:"
+      while read -r pkg; do
+        if (( verbose >= 3 )); then
+          [[ $pkg =~ $pkg_re ]] && name=${BASH_REMATCH[1]} arch=${BASH_REMATCH[2]}
+          if [[ -z $seen || $seenarch != $arch || $seen != $name ]]; then
+            printf '%s (%s):\n' "$name" "$arch"
+          fi
+          printf '  %s\n' "$pkg"
+        elif (( verbose >= 2 )); then
+          printf "$PWD/%s\n" "$pkg"
+        else
+          printf '%s\n' "$pkg"
+        fi
+      done < <(printf '%s\n' "$@" | sort -V)
+      printf '\n' >&2
+    fi
+
+    printf -v output 'finished dry run: %d candidates' "$filecount"
+  fi
+
+  if (( diskspace )); then
+    output+=" (diskspace saved: $(size_to_human "$totalsaved"))"
+  fi
+
+  msg "$output"
+}
 usage() {
   cat <<EOF
 usage: ${0##*/} <operation> [options] [targets...]
@@ -167,13 +192,14 @@ usage: ${0##*/} <operation> [options] [targets...]
                      specify '-' to read package names from stdin, newline delimited.
     -k  <num>        keep 'num' of each package in 'cachedir' (default: 3).
     -s               show diskspace saved by the operation.
+    -u               target uninstalled packages.
     -v               increase verbosity. specify up to 3 times.
 
 EOF
 }
 
 if (( ! UID )); then
-  error "Do not run this script as root. You will be prompted for privilege escalation."
+  error "Bad dog, no biscuit. You will be prompted for privilege escalation."
   exit 42
 fi
 
@@ -190,22 +216,18 @@ while getopts ':a:c:dfhi:k:m:rsuv' opt; do
        else
          IFS=',' read -r -a ign <<< "$OPTARG"
        fi
-       for i in "${ign[@]}"; do
-         ignore[$i]=1
-       done
+       blacklist+=("${ign[@]}")
       unset i ign ;;
     k) keep=$OPTARG
-      if [[ $keep != +([[:digit:]]) ]]; then
+      if [[ $keep != $OPTARG ]] || (( keep < 0 )); then
         die 'argument to option -k must be a non-negative integer'
       fi ;;
     m) move=1 movedir=$OPTARG ;;
     r) delete=1 ;;
     s) diskspace=1 ;;
     u) IFS=$'\n' read -r -d '' -a ign < <(pacman -Qq)
-       for i in "${ign[@]}"; do
-         ignore[$i]=1
-       done
-      unset i ign ;;
+       blacklist+=("${ign[@]}")
+       unset ign ;;
     v) (( ++verbose )) ;;
     :) die "option '--%s' requires an argument" "$OPTARG" ;;
     ?) die "invalid option -- '%s'" "$OPTARG" ;;
@@ -213,10 +235,8 @@ while getopts ':a:c:dfhi:k:m:rsuv' opt; do
 done
 shift $(( OPTIND - 1 ))
 
-# leftover args are a whitelist
-for pkg; do
-  whitelist[$pkg]=1
-done
+# remaining args are a whitelist
+whitelist=("$@")
 
 # sanity checks
 case $(( dryrun+delete+move )) in
@@ -236,12 +256,22 @@ if (( move || delete )); then
   [[ ! -w $cachedir || ( $movedir && ! -w $movedir ) ]] && needsroot=1
 fi
 
-# gather round, children
-cd "$cachedir"
-if gather && (( ! filecount )); then
+# unlikely that this will fail, but better make sure
+cd "$cachedir" || die "failed to chdir to \`%s'" "$cachedir"
+
+# note that these results are returned in an arbitrary order from awk, but
+# they'll be resorted (in summarize) iff we have a verbosity level set.
+IFS=$'\n' read -r -d '' -a candidates < \
+  <(printf '%s\n' *.pkg.tar?(.+([^.])) | sort -V |
+    pkgfilter "$keep" "$scanarch" "${whitelist[@]}" -- "${blacklist[@]}")
+
+if (( ! ${#candidates[*]} )); then
   msg 'no candidate packages found for pruning'
   exit 1
 fi
+
+# do this before we destroy anything
+(( diskspace )) && totalsaved=$(du -c "${candidates[@]}" | awk 'END { print $1 }')
 
 # crush. kill. destroy.
 (( verbose )) && cmdopts+=(-v)
@@ -251,6 +281,4 @@ elif (( move )); then
   runcmd mv "${cmdopts[@]}" "${candidates[@]}" "$movedir"
 fi
 
-summarize
-
-exit 0
+summarize "${candidates[@]}"
