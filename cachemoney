@@ -7,7 +7,7 @@ shopt -s extglob
 
 declare -a candidates=() cmdopts=() whitelist=() blacklist=()
 declare -i delete=0 diskspace=0 dryrun=0 filecount=0 keep=3 move=0 totalsaved=0
-declare    cachedir=/var/cache/pacman/pkg movedir= scanarch=
+declare    cachedir=/var/cache/pacman/pkg delim=$'\n' movedir= scanarch=
 
 msg() {
   local mesg=$1; shift
@@ -91,6 +91,7 @@ pkgfilter() {
       # idx[1,2] = idx[pkgname,arch]
       split(pkglist, idx, SUBSEP)
 
+      # enforce architecture match if specified
       if (!scanarch || scanarch == idx[2]) {
         count = split(packages[idx[1], idx[2]], pkgs, SUBSEP)
         if (count > keep) {
@@ -157,9 +158,9 @@ summarize() {
           fi
           printf '  %s\n' "$pkg"
         elif (( verbose >= 2 )); then
-          printf "$PWD/%s\n" "$pkg"
+          printf "$PWD/%s$delim" "$pkg"
         else
-          printf '%s\n' "$pkg"
+          printf "%s$delim" "$pkg"
         fi
       done < <(printf '%s\n' "$@" | sort -V)
       printf '\n' >&2
@@ -194,6 +195,7 @@ usage: ${0##*/} <operation> [options] [targets...]
     -s               show diskspace saved by the operation.
     -u               target uninstalled packages.
     -v               increase verbosity. specify up to 3 times.
+    -z               use null delimiters for candidate names (only with -v and -vv)
 
 EOF
 }
@@ -203,7 +205,7 @@ if (( ! UID )); then
   exit 42
 fi
 
-while getopts ':a:c:dfhi:k:m:rsuv' opt; do
+while getopts ':a:c:dfhi:k:m:rsuvz' opt; do
   case $opt in
     a) scanarch=$OPTARG ;;
     c) cachedir=$OPTARG ;;
@@ -229,6 +231,7 @@ while getopts ':a:c:dfhi:k:m:rsuv' opt; do
        blacklist+=("${ign[@]}")
        unset ign ;;
     v) (( ++verbose )) ;;
+    z) delim='\0' ;;
     :) die "option '--%s' requires an argument" "$OPTARG" ;;
     ?) die "invalid option -- '%s'" "$OPTARG" ;;
   esac
