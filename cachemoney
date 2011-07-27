@@ -59,25 +59,18 @@ pkgfilter() {
   }
 
   BEGIN {
-    i    = 1
-    wlen = 0
-    blen = 0
-
-    # build whitelist
-    while (ARGV[i] != "--") {
+    # create whitelist
+    wlen = ARGV[1]; delete ARGV[1]
+    for (i = 2; i < 2 + wlen; i++) {
       whitelist[ARGV[i]] = 1
-      wlen++
-      delete ARGV[i++]
+      delete ARGV[i]
     }
 
-    # snip out the "--" separator
-    delete ARGV[i++]
-
-    # build blacklist
-    while (i < ARGC) {
+    # create blacklist
+    blen = ARGV[i]; delete ARGV[i]
+    while (i++ < ARGC) {
       blacklist[ARGV[i]] = 1
-      blen++
-      delete ARGV[i++]
+      delete ARGV[i]
     }
 
     # read package filenames
@@ -266,7 +259,9 @@ cd "$cachedir" || die "failed to chdir to \`%s'" "$cachedir"
 # they'll be resorted (in summarize) iff we have a verbosity level set.
 IFS=$'\n' read -r -d '' -a candidates < \
   <(printf '%s\n' *.pkg.tar?(.+([^.])) | sort -V |
-    pkgfilter "$keep" "$scanarch" "${whitelist[@]}" -- "${blacklist[@]}")
+    pkgfilter "$keep" "$scanarch" \
+      "${#whitelist[*]}" "${whitelist[@]}" \
+      "${#blacklist[*]}" "${blacklist[@]}")
 
 if (( ! ${#candidates[*]} )); then
   msg 'no candidate packages found for pruning'
