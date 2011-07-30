@@ -6,9 +6,8 @@
 #
 
 BASEURL='http://man.cx'
-XMLLINT='xmllint --html'
-XPATH_EXPR='//*[@id="manpage"]/*[self::pre or self::h3]'
-DETAG='$d;s|</\?[^>]\+>||g;s|&lt\;|<|g;s|&gt\;|>|g'
+XMLLINT=('xmllint' '--html')
+XPATH_EXPR='//*[@id="manpage"]'
 
 usage() {
   printf "Usage: %s [section] manpage" "${0##*/}" >&2
@@ -36,5 +35,14 @@ esac
 # if found locally, exit
 man ${SECTION//[^[:digit:]]/} $PAGE 2>/dev/null && exit
 
-manpage=$(curl -s $BASEURL/$PAGE$SECTION | $XMLLINT --xpath "$XPATH_EXPR" - 2>/dev/null | sed "$DETAG" | colorify)
-[[ $manpage ]] && "${PAGER:-less}" <<< "$manpage" || printf "No mancx entry for %s\n" "$PAGE"
+manpage=$(curl -s $BASEURL/$PAGE$SECTION |
+        "${XMLLINT[@]}" --xpath "$XPATH_EXPR" - 2>/dev/null |
+        w3m -T text/html |
+        colorify)
+
+if [[ $manpage ]]; then
+  "${PAGER:-less}" <<< "$manpage"
+else
+  printf "No mancx entry for %s\n" "$PAGE"
+  exit 1
+fi
