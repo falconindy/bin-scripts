@@ -1,0 +1,107 @@
+#!/bin/bash
+
+volfile=/run/user/noclaf/volume
+
+getvol() {
+  local channel=$1
+
+  (( $# == 1 )) || return 1
+  amixer sget "$channel" | sed -n '$s|.*\[\([[:digit:]]\+\)%\].*|\1|p'
+}
+
+setvol() {
+  local channel=$1 level=$2
+
+  (( $# == 2 )) || return 1
+  amixer sset "$channel" "$level" >/dev/null
+}
+
+is_muted() {
+  [[ -f $volfile ]]
+}
+
+mute() {
+  local channel=$1 curvol=
+
+  [[ $channel ]] || return 1
+  curvol="$(getvol "$channel")"
+  printf '%s\n' "$curvol" > "$volfile"
+  setvol "$channel" 0
+
+  printf '%s' 0
+}
+
+unmute() {
+  local channel=$1 newvol=
+
+  read -r newvol < "$volfile"
+  setvol "$channel" "$newvol"
+  rm -f "$volfile"
+
+  printf '%s' "$newvol"
+}
+
+get_icon () {
+  local icon_name display_volume=$1
+
+  if (( display_volume > 67 )); then
+    icon_name="high"
+  elif (( display_volume > 33 )); then 
+    icon_name="medium"
+  elif (( display_volume > 0 )); then 
+    icon_name="low"
+  else
+    icon_name="muted"
+  fi
+
+  printf "notification-audio-volume-%s" "$icon_name"
+}
+
+toggle() {
+  local channel=$1 savedvol= newvol=
+
+  [[ $channel ]] || return 1
+  if is_muted; then
+    unmute "$channel"
+  else
+    mute "$channel"
+  fi
+}
+
+increase() {
+  local channel=$1 increment=$2 curvol= newvol=
+
+  (( $# == 2 )) || return 1
+
+  is_muted && (( increment += $(unmute) ))
+
+  curvol=$(getvol "$channel")
+  newvol=$(( curvol + increment ))
+  (( newvol > 100 )) && newvol=100
+
+  setvol "$channel" "$(( curvol + increment ))"
+  echo "$newvol"
+}
+
+decrease() {
+  local channel=$1 increment=$2 curvol= newvol=
+
+  (( $# == 2 )) || return 1
+  curvol=$(getvol "$channel")
+  newvol=$(( curvol - increment ))
+  (( newvol < 0 )) && newvol=0
+
+  setvol "$channel" "$newvol"
+  echo "$newvol"
+}
+
+action=$1 chan=$2 inc=$3
+type -t $action >/dev/null || exit 1
+
+disp_volume=$("$action" "$chan" "$inc")
+notify-send " " \
+    -i $(get_icon $disp_volume) \
+    -t 1000 \
+    -h int:value:$disp_volume \
+    -h string:synchronous:volume
+
