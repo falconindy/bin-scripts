@@ -1,10 +1,7 @@
 #!/bin/bash
 
-
-cconfig="${XDG_CONFIG_HOME:-$HOME/.config}/conky/conkyrc"
-conky -c "$cconfig" | while read out; do
-  xsetroot -name "$out"
-done &
+# dump our dbus address to a file
+echo $DBUS_SESSION_BUS_ADDRESS > ~/.dbus_address
 
 # start terminals here so that they're explicitly started
 # _after_ the consolekit session is created.
@@ -13,6 +10,13 @@ urxvtc -name tmux -geometry 122x77 -e tmux -L main attach
 urxvtc -name htop -e htop
 urxvtc -name ncmpcpp -e ncmpcpp
 urxvtc -name werk
+
+chromium &
+
+cconfig="${XDG_CONFIG_HOME:-$HOME/.config}/conky/conkyrc"
+conky -c "$cconfig" | while read out; do
+  xsetroot -name "$out"
+done &
 
 while true; do
   dwm 2> ~/.dwm.log
