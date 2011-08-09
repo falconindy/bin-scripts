@@ -5,5 +5,5 @@ if (( $# < 2 )); then
   exit 1
 fi
 
-exec git send-email --to arch-projects@archlinux.org --subject-prefix="$1][PATCH" "${@:2}"
+exec git format-patch --to arch-projects@archlinux.org --subject-prefix="$1][PATCH" "${@:2}"
 
