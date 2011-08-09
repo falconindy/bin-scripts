@@ -30,6 +30,7 @@ handler[odf]=$doc
 handler[ods]=$doc
 handler[text/rtf]=$doc
 handler[video]=$video
+handler[mkv]=$video
 handler[xls]=$doc
 
 # Determine the MIME type via 'file' and assign it to an array
