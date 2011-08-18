@@ -6,14 +6,14 @@ getvol() {
   local channel=$1
 
   (( $# == 1 )) || return 1
-  amixer sget "$channel" | sed -n '$s|.*\[\([[:digit:]]\+\)%\].*|\1|p'
+  amixer get "$channel" | sed -n '$s|.*\[\([[:digit:]]\+\)%\].*|\1|p'
 }
 
 setvol() {
   local channel=$1 level=$2
 
   (( $# == 2 )) || return 1
-  amixer sset "$channel" "$level" >/dev/null
+  amixer -q set "$channel" "$level"
 }
 
 is_muted() {
@@ -95,10 +95,10 @@ decrease() {
   echo "$newvol"
 }
 
-action=$1 chan=$2 inc=$3
+action=$1 channel=$2 delta=$3
 type -t $action >/dev/null || exit 1
 
-disp_volume=$("$action" "$chan" "$inc")
+disp_volume=$("$action" "$channel" "$delta")
 notify-send " " \
     -i $(get_icon $disp_volume) \
     -t 1000 \
