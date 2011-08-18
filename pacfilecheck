@@ -1,7 +1,11 @@
 #!/bin/bash
+#
+# pacfilecheck: compares files that pacman tracks to what's actually
+#   on the filesystem
+#
 
 declare curpkg= pkg= file=
-declare -i tolerance=$1 filecount= hitcount=
+declare -i tolerance=${1:-100} filecount= hitcount=
 
 summary() {
   local ratio=
@@ -17,6 +21,16 @@ summary() {
     printf '%-30s %-10s (%s%%)\n' "$pkg" "$hitcount/$filecount" "$ratio"
   fi
 }
+
+usage() {
+  printf 'usage: %s [tolerance]\n' "${0##*/}"
+  printf '       tolerance defaults to 100 if unspecified\n'
+  exit 1
+}
+
+if [[ $1 = -h || ( $1 && $1 != +([[:digit:]]) ) ]]; then
+  usage
+fi
 
 pacman -Ql | while read pkg file; do
   if [[ -z $curpkg || $pkg != "$curpkg" ]]; then
