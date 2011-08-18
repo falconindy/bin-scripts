@@ -1,6 +1,10 @@
 #!/bin/bash
 
-volfile=/run/user/noclaf/volume
+if [[ -d /run/user/$USER ]]; then
+  volfile=/run/user/$USER/volume
+else
+  volfile=$HOME/.volume
+fi
 
 getvol() {
   local channel=$1
