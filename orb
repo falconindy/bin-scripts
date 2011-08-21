@@ -6,16 +6,18 @@
 
 shopt -s extglob
 
-declare -a respheaders
-content_encoding=cat          # NOOP decompressor
-bufsiz=4096
+declare -a respheaders uri_list
 
-uastring="bashium 0.2 (bash ${BASH_VERSINFO[0]}-${BASH_VERSINFO[1]})"
-hostname='aur.archlinux.org'
-port='80'
-fmt_pkgpath='/packages/%s/%s.tar.gz'
-fmt_rpcpath='/rpc.php?type=%s&arg=%s'
-fmt_pbpath='/packages/%s/PKGBUILD'
+declare -i bufsiz=4096 actrpc=0 actpb=0 acttb=0
+
+declare content_encoding=cat          # NOOP decompressor
+
+declare -r uastring="bashium 0.2 (bash ${BASH_VERSINFO[0]}-${BASH_VERSINFO[1]})"
+declare -r hostname='aur.archlinux.org'
+declare -r port='80'
+declare -r fmt_pkgpath='/packages/%s/%s/%s.tar.gz'
+declare -r fmt_rpcpath='/rpc.php?type=%s%s'
+declare -r fmt_pbpath='/packages/%s/%s/PKGBUILD'
 
 usage() {
   cat <<EOF
@@ -69,6 +71,28 @@ urlencode() {
   done
 }
 
+build_uri_list() {
+  local target= encoded= qtype=$1; shift
+
+  if (( actrpc )); then
+    if [[ $qtype = multiinfo ]]; then
+      printf "$fmt_rpcpath\n" 'multiinfo' "$(printf '&arg[]=%s' "$@")"
+    else
+      for target; do
+        printf "$fmt_rpcpath\n" "$qtype" "&arg=$(urlencode "$target")"
+      done
+    fi
+  elif (( actpb )); then
+    for target; do
+      printf "$fmt_pbpath\n" "$(urlencode "${target:0:2}")" "$(urlencode "$target")"
+    done
+  elif (( acttb )); then
+    for target; do
+      encoded=$(urlencode "$target")
+      printf "$fmt_pkgpath\n" "$(urlencode "${target:0:2}")" "$encoded" "$encoded"
+    done
+  fi
+}
 
 # content handlers
 json() {
@@ -103,6 +127,7 @@ connect() {
 
 # request handler
 send_http_request() {
+  (( verbose )) && printf '%s' '> ' "http://" "$hostname" "$1" $'\n'
   printf 'GET %s HTTP/1.1\r
 User-Agent: %s\r
 Host: %s\r
@@ -198,13 +223,13 @@ trap 'exec 4<&-' 0 QUIT
 # main()
 while getopts ':dghimrsv' opt; do
   case $opt in
-    d) uri=$fmt_pkgpath ;;
-    g) uri=$fmt_pbpath ;;
+    d) acttb=1 ;;
+    g) actpb=1 ;;
     h) usage ;;
-    i) uri=$fmt_rpcpath qtype=info ;;
-    m) uri=$fmt_rpcpath qtype=msearch ;;
-    r) raw=cat ;;
-    s) uri=$fmt_rpcpath qtype=search ;;
+    i) actrpc=1 qtype=multiinfo ;;
+    m) qtype=msearch ;;
+    r) actrpc=1 raw=cat ;;
+    s) actrpc=1 qtype=search ;;
     v) verbose=1 ;;
     ?) die '%s: invalid option -- '\''%s'\' "${0##*/}" "$OPTARG"
        exit 1 ;;
@@ -212,14 +237,16 @@ while getopts ':dghimrsv' opt; do
 done
 shift $(( OPTIND - 1 ))
 
-{ [[ $uri ]] && (( $# )); } || usage
+(( (acttb + actrpc + actpb) == 1 )) || die 'cannot specify multiple operations'
+
+IFS=$'\n' read -r -d '' -a uri_list < <(build_uri_list "$qtype" "$@")
 
 connect
-for target; do
-  target="$(urlencode "$target")"
+for uri in "${uri_list[@]}"; do
+  target=$1; shift
   [[ $connection = close ]] && connect;     # keep-alive expired
   unset "${respheaders[@]}"
-  send_http_request "$(printf "$uri" "${qtype:-$target}" "$target")"
+  send_http_request "$uri"
   read_response_code
   read_response_headers
   read_response_body
