@@ -117,7 +117,7 @@ for arg in "${args[@]}"; do
   fi
 
   for flac in "${flacs[@]}"; do
-    if [[ ! "$(file -bi "$flac")" =~ audio/x-flac ]]; then
+    if [[ ! $(file -bi --mime-type "$flac") = audio/x-flac ]]; then
       warn "warning: '$flac' is not a valid flac file"
     fi
 
