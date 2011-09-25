@@ -1,8 +1,6 @@
 #!/bin/bash
-
 #
 # fetch the latest PKGBUILD from Arch's SVN
-# optdep: expac
 #
 
 shopt -s extglob
@@ -11,35 +9,36 @@ absroot=/var/abs
 svnrepo="svn://svn.archlinux.org"
 splitpkgcache=$HOME/.cache/splitpkg.cache
 
-build_split_pkg_cache() {
+build_splitpkg_cache() {
   printf '==> building split package cache...\n' >&2
-  mkdir -p $HOME/.cache
+  [[ -d $HOME/.cache/ ]] || mkdir -p $HOME/.cache
 
-  printf 'declare -A splitcache\n'
-  while read -r -d '' path; do
-    (
-      . "$path" || { printf 'failed to source %s\n' "$path"; exit; }
-      pkgbase=${pkgbase:-$pkgname}
-      for pkg in "${pkgname[@]}"; do
-        printf 'splitcache[%s]=%s\n' "$pkg" "$pkgbase"
-      done
-    )
-  done < <(\grep -Zlr '^pkgname=(' "$ABSROOT"/*)
-} >"$splitpkgcache"
+  find "$absroot" -name PKGBUILD -exec bash -c '
+    . /etc/makepkg.conf
+    echo "declare -A splitpkgdb"
+    for f in "${@%/PKGBUILD}"; do
+      (
+        . "$f/PKGBUILD"
+        for pkg in "${pkgname[@]}"; do
+          printf "splitpkgdb[%s]=%s\n" "$pkg" "${f##*/}"
+        done
+      )
+    done' _ {} + | sort -u >"$splitpkgcache"
+}
 
 getrepo() {
-  if type -P expac &>/dev/null; then
-    expac -S '%r' $1
-  else
-    LC_ALL=C pacman -Si $1 2>/dev/null | sed -n '/^Repo/{s/.*: \(.*\)/\1/p;q}'
-  fi
+  for f in "$absroot"/*; do
+    if [[ -d $f/$1 ]]; then
+      echo "${f##*/}"
+      return 0
+    fi
+  done
+
+  return 1
 }
 
 [[ -z $1 ]] && { printf "Usage: %s targets...\n" "${0##*/}"; exit 1; }
-
-if [[ ! -f $splitpkgcache && -d $absroot ]]; then
-  build_split_pkg_cache
-fi
+[[ ! -f $splitpkgcache && -d $absroot ]] && build_splitpkg_cache
 [[ -s $splitpkgcache ]] && . "$splitpkgcache"
 
 for pkg; do
@@ -50,20 +49,23 @@ for pkg; do
     pkg=$provider
   fi
 
-  # read only the first, repo is only of mild importance
-  read repo _ < <(getrepo $pkg)
-  [[ -z $repo ]] && { printf "error: package \`%s' not found\n" "$pkg"; continue; }
+  if ! repo=$(getrepo "$pkg"); then
+    printf "error: package \`%s' not found\n" "$pkg" >&2
+    continue
+  fi
 
   case $repo in
     @(community|multilib)*) repo=community ;;
     *) repo=packages ;;
   esac
 
-  [[ -d $pkg ]] && { printf "error: directory \`%s' already exists\n" "$pkg"; continue; }
+  if [[ -d $pkg ]]; then
+    printf "error: directory \`%s' already exists\n" "$pkg"
+    continue
+  fi
 
   svn export "$svnrepo/$repo/$pkg/trunk" $pkg >/dev/null &&
     printf ":: checked out %s\n" "$pkg" ||
     printf "error: failed to get package \`%s'\n" "$pkg"
 
 done
-
