@@ -13,17 +13,19 @@ build_splitpkg_cache() {
   printf '==> building split package cache...\n' >&2
   [[ -d $HOME/.cache/ ]] || mkdir -p $HOME/.cache
 
-  find "$absroot" -name PKGBUILD -exec bash -c '
-    . /etc/makepkg.conf
+  . /etc/makepkg.conf
+  {
     echo "declare -A splitpkgdb"
-    for f in "${@%/PKGBUILD}"; do
+    for p in "$absroot"/*/*/PKGBUILD; do
       (
-        . "$f/PKGBUILD"
-        for pkg in "${pkgname[@]}"; do
-          printf "splitpkgdb[%s]=%s\n" "$pkg" "${f##*/}"
+        pkgdir=${p%/PKGBUILD}
+        . "$pkgdir/PKGBUILD" 2>/dev/null
+        for split in "${pkgname[@]}"; do
+          printf "splitpkgdb[%s]=%s\n" "$split" "${pkgdir##*/}"
         done
       )
-    done' _ {} + | sort -u >"$splitpkgcache"
+    done | sort -u
+  } >"$splitpkgcache"
 }
 
 getrepo() {
@@ -36,6 +38,11 @@ getrepo() {
 
   return 1
 }
+
+if [[ $1 = -@(r|-rebuild) ]]; then
+  build_splitpkg_cache
+  exit 0
+fi
 
 [[ -z $1 ]] && { printf "Usage: %s targets...\n" "${0##*/}"; exit 1; }
 [[ ! -f $splitpkgcache && -d $absroot ]] && build_splitpkg_cache
