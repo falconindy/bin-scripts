@@ -226,10 +226,10 @@ while getopts ':dghimrsv' opt; do
     d) acttb=1 ;;
     g) actpb=1 ;;
     h) usage ;;
-    i) actrpc=1 qtype=multiinfo ;;
+    i) (( ++actrpc )); qtype=multiinfo ;;
     m) qtype=msearch ;;
-    r) actrpc=1 raw=cat ;;
-    s) actrpc=1 qtype=search ;;
+    r) raw=cat ;;
+    s) (( ++actrpc )); qtype=search ;;
     v) verbose=1 ;;
     ?) die '%s: invalid option -- '\''%s'\' "${0##*/}" "$OPTARG"
        exit 1 ;;
@@ -237,7 +237,10 @@ while getopts ':dghimrsv' opt; do
 done
 shift $(( OPTIND - 1 ))
 
-(( (acttb + actrpc + actpb) == 1 )) || die 'cannot specify multiple operations'
+case $(( acttb + actrpc + actpb )) in
+  0) die 'no operation specified' ;;
+  [^1]) die 'cannot specify multiple operations' ;;
+esac
 
 IFS=$'\n' read -r -d '' -a uri_list < <(build_uri_list "$qtype" "$@")
 
