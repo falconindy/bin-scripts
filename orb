@@ -8,13 +8,13 @@ shopt -s extglob
 
 declare -a respheaders uri_list
 
-declare -i bufsiz=4096 actrpc=0 actpb=0 acttb=0
+declare -i actrpc=0 actpb=0 acttb=0
 
 declare content_encoding=cat          # NOOP decompressor
 
 declare -r uastring="bashium 0.2 (bash ${BASH_VERSINFO[0]}-${BASH_VERSINFO[1]})"
 declare -r hostname='aur.archlinux.org'
-declare -r port='80'
+declare -r port='80' bufsiz=4096
 declare -r fmt_pkgpath='/packages/%s/%s/%s.tar.gz'
 declare -r fmt_rpcpath='/rpc.php?type=%s%s'
 declare -r fmt_pbpath='/packages/%s/%s/PKGBUILD'
@@ -227,7 +227,7 @@ while getopts ':dghimrsv' opt; do
     g) actpb=1 ;;
     h) usage ;;
     i) (( ++actrpc )); qtype=multiinfo ;;
-    m) qtype=msearch ;;
+    m) (( ++actrpc )); qtype=msearch ;;
     r) raw=cat ;;
     s) (( ++actrpc )); qtype=search ;;
     v) verbose=1 ;;
