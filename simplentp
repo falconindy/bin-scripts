@@ -6,4 +6,4 @@ printf "Setting hwclock to localtime from time.nist.gov...\n"
 hwclock --set --date="$(awk 'NF > 1 {print $2,$3,"UTC"}' < /dev/tcp/time.nist.gov/13)" || exit 1
 printf "Sync'ing hwclock to system...\n"
 hwclock -s
-printf "The time is now: %s" "$(hwclock)"
+printf "The time is now: %s\n" "$(hwclock)"
