@@ -1,7 +1,15 @@
 #!/bin/bash
 
 # dump our dbus address to a file
-echo $DBUS_SESSION_BUS_ADDRESS > ~/.dbus_address
+if [[ -z $DBUS_SESSION_BUS_ADDRESS ]]; then
+  # fffff, go find it
+  read machine_id < /etc/machine-id
+  if [[ $machine_id && -f ~/.dbus/session-bus/$machine_id-${DISPLAY#:} ]]; then
+    . ~/.dbus/session-bus/$machine_id-${DISPLAY#:}
+    unset machine_id
+  fi
+fi
+echo "$DBUS_SESSION_BUS_ADDRESS" > ~/.dbus_address
 
 # start terminals here so that they're explicitly started
 # _after_ the consolekit session is created.
