@@ -10,19 +10,19 @@ printf "<table>\n"
 
 count=0 # Initialize a counter for columns
 while read line; do
-  if [[ $count -eq 0 ]]; then
+  if (( ! count )); then
     # We're at the start of a new row, open it.
     printf "\t<tr>\n"
   fi
 
-  if [[ $count -lt $1 ]]; then
+  if (( count < $1 )); then
     # Print next line from data file
     printf "\t\t<td>%s</td>\n" "$line"
   fi
 
   (( count++ ))
 
-  if [[ $count -eq $1 ]]; then
+  if (( count == $1 )); then
     # We're at the end of a row, close it.
     printf "\t</tr>\n"
     count=0
