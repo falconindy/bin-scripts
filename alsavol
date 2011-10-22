@@ -50,9 +50,9 @@ get_icon () {
 
   if (( display_volume > 67 )); then
     icon_name="high"
-  elif (( display_volume > 33 )); then 
+  elif (( display_volume > 33 )); then
     icon_name="medium"
-  elif (( display_volume > 0 )); then 
+  elif (( display_volume > 0 )); then
     icon_name="low"
   else
     icon_name="muted"
