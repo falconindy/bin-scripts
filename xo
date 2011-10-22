@@ -30,13 +30,14 @@ handler[odf]=$doc
 handler[ods]=$doc
 handler[text/rtf]=$doc
 handler[video]=$video
+handler[application/ogg]=$video
 handler[mkv]=$video
 handler[xls]=$doc
 
 # Determine the MIME type via 'file' and assign it to an array
 # mimetype[0] = major (e.g. image)
 # mimetype[1] = minor (e.g. png)
-IFS='/' read -r -a mimetype < <(file -bi --mime-type "$1")
+IFS='/' read -rd ';' -a mimetype < <(file -bi --mime-type "$1")
 
 # Determine the extension as a fallback method
 ext=${1//*.}
