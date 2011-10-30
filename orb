@@ -177,11 +177,11 @@ read_response_headers() {
   content_type=${content_type//[.-]/_}
   content_encoding=${content_encoding//[.-]/_}
 
-  if [[ $(type -t $content_type) = !(function|file) ]]; then
+  if ! type -p "$content_type" &>/dev/null; then
     die 'unknown/unhandled content type: %s\n' "$content_type"
   fi
 
-  if [[ $(type -t $content_encoding) = !(function|file) ]]; then
+  if ! type -p "$content_encoding" &>/dev/null; then
     die 'unknown/unhandled encoding type: %s\n' "$content_encoding"
   fi
 }
