@@ -99,7 +99,7 @@ json() {
   type -P json_reformat >/dev/null && json_reformat || cat
 }
 
-x-tgz() {
+x_tgz() {
   if tar xz; then
     info '%s downloaded to %s' "$target" "$PWD"
   else
@@ -172,6 +172,10 @@ read_response_headers() {
   (( verbose )) && printf '\n'
 
   content_type=${content_type##*/} # trim 'application/'
+
+  # sanitize
+  content_type=${content_type//[.-]/_}
+  content_encoding=${content_encoding//[.-]/_}
 
   if [[ $(type -t $content_type) = !(function|file) ]]; then
     die 'unknown/unhandled content type: %s\n' "$content_type"
