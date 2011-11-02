@@ -76,7 +76,10 @@ build_uri_list() {
 
   if (( actrpc )); then
     if [[ $qtype = multiinfo ]]; then
-      printf "$fmt_rpcpath\n" 'multiinfo' "$(printf '&arg[]=%s' "$@")"
+      for arg; do
+        encoded+="&arg[]=$(urlencode "$arg")"
+      done
+      printf "$fmt_rpcpath\n" 'multiinfo' "$encoded"
     else
       for target; do
         printf "$fmt_rpcpath\n" "$qtype" "&arg=$(urlencode "$target")"
