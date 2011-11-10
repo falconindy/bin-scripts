@@ -50,9 +50,9 @@ fi
 
 for pkg; do
   # check split package cache first
-  provider=${splitcache[$pkg]}
+  provider=${splitpkgdb[$pkg]}
   if [[ $provider && $pkg != "$provider" ]]; then
-    printf '==> %s is built by %s\n' "$pkg" "${splitcache[$pkg]}"
+    printf '==> %s is built by %s\n' "$pkg" "$provider"
     pkg=$provider
   fi
 
