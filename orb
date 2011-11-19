@@ -25,10 +25,11 @@ Usage: ${0##*/} operation target...
 
  Operations:
   -d    download target(s)
-  -i    show package info for target(s)
-  -m    search for target(s) by maintainer
+  -i    show package info for target(s) <multiinfo>
+  -I    show package info for target(s) <info>
+  -m    search for target(s) by maintainer <msearch>
   -r    raw output
-  -s    search for target(s)
+  -s    search for target(s) <search>
  Options:
   -h    display this help message and exit
   -v    show http response headers
@@ -228,11 +229,12 @@ read_response_body() {
 trap 'exec 4<&-' 0 QUIT
 
 # main()
-while getopts ':dghimrsv' opt; do
+while getopts ':dghIimrsv' opt; do
   case $opt in
     d) acttb=1 ;;
     g) actpb=1 ;;
     h) usage ;;
+    I) (( ++actrpc )); qtype=info ;;
     i) (( ++actrpc )); qtype=multiinfo ;;
     m) (( ++actrpc )); qtype=msearch ;;
     r) raw=cat ;;
