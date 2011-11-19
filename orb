@@ -131,14 +131,14 @@ connect() {
 # request handler
 send_http_request() {
   (( verbose )) && printf '%s' '> ' "http://" "$hostname" "$1" $'\n'
-  printf 'GET %s HTTP/1.1\r
-User-Agent: %s\r
-Host: %s\r
-Accept-Encoding: gzip\r
-Accept: */*\r
-Connection: Keep-Alive\r
-\r
-' "$1" "$uastring" "$hostname" >&$SOCK
+   printf '%s\r\n' \
+      "GET $1 HTTP/1.1" \
+      "User-Agent: $uastring" \
+      "Host: $hostname" \
+      "Accept-Encoding: gzip" \
+      "Accept: */*" \
+      "Connection: Keep-Alive" \
+      "" >&$SOCK
 }
 
 
