@@ -1,0 +1,184 @@
+#!/bin/bash
+#
+# kload - a syslinux.cfg parser for autoloading a kernel for kexec
+#
+
+bootloadercfg=/boot/syslinux/syslinux.cfg
+
+error() {
+  local mesg=$1; shift
+  printf "==> ERROR: $mesg\n" "$@"
+} >&2
+
+die() {
+  error "$@"
+  exit 1
+}
+
+usage() {
+  cat <<EOF
+usage: ${0##*/} <label> [rootoptions]
+
+${0##*/} parses syslinux's bootloader configuration and automates the process
+of loading a new kernel for kexec.
+
+  Options:
+    -f <file>   use another config file (default: /boot/syslinux/syslinux.cfg)
+    -h          display this help message.
+    -l          display available kernels by label
+
+EOF
+  exit 1
+}
+
+resolve_root() {
+  local dev=$1
+
+  case $dev in
+    /*)
+      echo "$dev"
+      ;;
+    LABEL=|UUID=)
+      blkid -lt "$dev" -o device
+      ;;
+    [0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]|[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])
+      # hex encoded major/minor, such as from LILO
+      major=$(( 0x0$device >> 8 ))
+      minor=$(( 0x0$device & 0xff ))
+      ;;
+    0x[0-9a-fA-F][0-9a-fA-F]*)
+      major=$(( $device >> 8 ))
+      minor=$(( $device & 0xff ))
+      ;;
+  esac
+
+  if [[ $major && $minor ]]; then
+    readlink -f "/sys/dev/block/$major:$minor"
+  fi
+}
+
+parse_cmdline() {
+  local opt opts
+
+  for opt in $1; do
+    case $opt in
+      root)
+        IFS='=' read -r _ value <<< "$opt"
+        opt=$(resolve_root "$value")
+        ;;
+    esac
+    opts+=("$opt")
+  done
+
+  printf "${opts[*]}"
+}
+
+parse_syslinux_config() {
+  local found=0
+
+  while read -r key value; do
+    [[ -z $key || ${key:0:1} = '#' ]] && continue
+
+    if [[ $key = LABEL ]]; then
+      if [[ $value != "$1" ]]; then
+        (( found )) && return || continue
+      fi
+      found=1
+    fi
+
+    (( found )) || continue
+
+    case $key in
+      LINUX|KERNEL)
+        kernel="$value"
+        ;;
+      APPEND|INITRD)
+        declare -g "${key,,}=$value"
+        ;;
+    esac
+  done <"$bootloadercfg"
+}
+
+show_labels() {
+  awk '
+    function longest(list, listlen,      i, len, maxlen) {
+      maxlen = 0
+      for(i = 1; i <= listlen; i++) {
+        len = length(list[i])
+        if (len > maxlen) {
+          maxlen = len
+        }
+      }
+      return maxlen
+    }
+
+    BEGIN { i = 0 }
+
+    $1 ~ /^LABEL/ {
+      i++
+      label[i] = $2
+    }
+    $1 ~ /(LINUX|KERNEL)/ {
+      sub(/^[[:blank:]]*[^[:blank:]]+ /, "")
+      kernels[i] = $0
+    }
+    $1 ~ /APPEND/ {
+      sub(/^[[:blank:]]*[^[:blank:]]+ /, "")
+      append[i] = append[i] $0
+    }
+
+    END {
+      len = longest(label, i)
+      printf "%-*s\t%s <%s>\n", len, "label", "kernel image", "options"
+      print "-------------------------------------------------------------"
+      for (j = 1; j <= i; j++) {
+        if (kernels[j] !~ /\.c32$/) {
+          printf "%-*s\t%s <%s>\n", len, label[j], kernels[j], append[j]
+        }
+      }
+    }
+  ' "$bootloadercfg"
+  exit 0
+}
+
+runcmd() {
+  if (( needsroot )); then
+    if sudo -v &>/dev/null && sudo -l &>/dev/null; then
+      sudo "$@"
+    else
+      printf '%s ' 'root'
+      su -c "$(printf '%q ' "$@")"
+    fi
+  fi
+}
+
+# main()
+while getopts ":f:hl" flag; do
+  case $flag in
+    f) bootloadercfg=$OPTARG ;;
+    h) usage ;;
+    l) show_labels ;;
+    :) die "option '--%s' requires an argument" "$OPTARG" ;;
+    ?) die "invalid option -- '%s'" "$OPTARG" ;;
+  esac
+done
+shift $(( OPTIND - 1 ))
+
+[[ -f $bootloadercfg ]] || die "unable to find bootloader config: %s" "$bootloadercfg"
+
+label=$1; shift
+[[ $label ]] || die "no label specified (use -h for help)"
+
+(( UID == 0 )) || needsroot=1
+
+parse_syslinux_config "$label"
+[[ -z $kernel || -z $append ]] && die "failed to find label \`%s'" "$label"
+
+rootopts=$(parse_cmdline "$append")
+kexec_cmd=(kexec -l "/boot/${kernel##*/}" --append="${*:-rootopts}")
+
+[[ $initrd ]] && kexec_cmd+=(--initrd="/boot/${initrd##*/}")
+
+printf 'executing: %s\n' "${kexec_cmd[*]}"
+runcmd "${kexec_cmd[@]}"
+
