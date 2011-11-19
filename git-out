@@ -3,14 +3,21 @@
 # behavior like mercurial's "out" command
 #
 
-read -r _ curbranch < <(git branch | grep '^\*')
+shopt -s extglob
 
-remote=$(git config branch.$curbranch.remote 2>/dev/null)
+curbranch=$(git symbolic-ref -q HEAD)
+curbranch=${curbranch#refs/heads/}
+
+if [[ -z $curbranch ]]; then
+  printf 'error: current branch is unknown!\n' >&2
+  exit 1
+fi
+
+remote=$(git config "branch.$curbranch.remote" 2>/dev/null || echo "origin")
 remote=${remote##*/}
 
-merge=$(git config branch.$curbranch.merge 2>/dev/null)
-merge=${merge##*/}
-merge=${merge#+}
+merge=$(git config "branch.$curbranch.merge" 2>/dev/null || echo "$curbranch")
+merge=${merge##*/?(+)}
 
 printf 'Comparing with %s/%s\n' "${remote:-origin}" "${merge:-master}"
 git cherry -v ${remote:-origin}/${merge:-master}
