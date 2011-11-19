@@ -123,7 +123,7 @@ gzip() {
 
 # connect handler
 connect() {
-  { exec 4<>/dev/tcp/$hostname/$port; } 2>/dev/null ||
+  { exec {SOCK}<>/dev/tcp/$hostname/$port; } 2>/dev/null ||
     die 'error: failed to connect to %s:%s\n' "$hostname" "$port"
 }
 
@@ -138,13 +138,13 @@ Accept-Encoding: gzip\r
 Accept: */*\r
 Connection: Keep-Alive\r
 \r
-' "$1" "$uastring" "$hostname" >&4
+' "$1" "$uastring" "$hostname" >&$SOCK
 }
 
 
 # response handlers
 read_response_code() {
-  read -r -u 4 header resp status
+  read -r -u $SOCK header resp status
   (( verbose )) && printf '%s: %s %s\n' "$header" "$resp" "$status"
 
   if [[ $resp ]]; then
@@ -161,7 +161,7 @@ read_response_headers() {
   local header= value=
 
   # read response until the end of the headers
-  while IFS=': ' read -r -u 4 header value; do
+  while IFS=': ' read -r -u $SOCK header value; do
     # end of headers
     [[ $header = $'\r' ]] && break
 
@@ -203,24 +203,24 @@ read_response_body() {
   local len=
 
   if (( content_length )); then
-    read_buffered 4 $content_length | $content_encoding | ${raw:-$content_type}
+    read_buffered $SOCK $content_length | $content_encoding | ${raw:-$content_type}
   elif [[ "$transfer_encoding" = chunked ]]; then
     while true; do
-      read -r -d $'\r\n' -u 4 len           # read length, consume \r
-      read -r -n 1 -u 4 _                   # consume \n
+      read -r -d $'\r\n' -u $SOCK len       # read length, consume \r
+      read -r -n 1 -u $SOCK _               # consume \n
 
       len=$(( 0x$len ))                     # convert hex2dec
       if (( len == 0 )); then               # exit condition
-        read -r -n 4 -u 4 _                 # consume final \r\n\r\n
+        read -r -n 4 -u $SOCK _             # consume final \r\n\r\n
         break
       fi
 
-      read_buffered 4 $len                  # read chunk
+      read_buffered $SOCK $len              # read chunk
 
-      read -r -n 2 -u 4 _                   # consume \r\n
+      read -r -n 2 -u $SOCK _               # consume \r\n
     done | $content_encoding | ${raw:-$content_type}
   else
-    $content_encoding <&4 | ${raw:-$content_type}
+    $content_encoding <&$SOCK | ${raw:-$content_type}
   fi
 }
 
