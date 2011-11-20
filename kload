@@ -31,48 +31,6 @@ EOF
   exit 1
 }
 
-resolve_root() {
-  local dev=$1
-
-  case $dev in
-    /*)
-      echo "$dev"
-      ;;
-    LABEL=|UUID=)
-      blkid -lt "$dev" -o device
-      ;;
-    [0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]|[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])
-      # hex encoded major/minor, such as from LILO
-      major=$(( 0x0$device >> 8 ))
-      minor=$(( 0x0$device & 0xff ))
-      ;;
-    0x[0-9a-fA-F][0-9a-fA-F]*)
-      major=$(( $device >> 8 ))
-      minor=$(( $device & 0xff ))
-      ;;
-  esac
-
-  if [[ $major && $minor ]]; then
-    readlink -f "/sys/dev/block/$major:$minor"
-  fi
-}
-
-parse_cmdline() {
-  local opt opts
-
-  for opt in $1; do
-    case $opt in
-      root)
-        IFS='=' read -r _ value <<< "$opt"
-        opt=$(resolve_root "$value")
-        ;;
-    esac
-    opts+=("$opt")
-  done
-
-  printf "${opts[*]}"
-}
-
 parse_syslinux_config() {
   local found=0
 
@@ -174,8 +132,7 @@ label=$1; shift
 parse_syslinux_config "$label"
 [[ -z $kernel || -z $append ]] && die "failed to find label \`%s'" "$label"
 
-rootopts=$(parse_cmdline "$append")
-kexec_cmd=(kexec -l "/boot/${kernel##*/}" --append="${*:-$rootopts}")
+kexec_cmd=(kexec -l "/boot/${kernel##*/}" --append="${*:-$append}")
 
 [[ $initrd ]] && kexec_cmd+=(--initrd="/boot/${initrd##*/}")
 
