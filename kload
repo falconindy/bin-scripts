@@ -132,7 +132,7 @@ show_labels() {
       printf "%-*s\t%s\n", len, "label", "kernel image/options"
       print "-------------------------------------------------------------"
       for (j = 1; j <= i; j++) {
-        if (kernels[j] !~ /\.c32$/) {
+        if (kernels[j] && kernels[j] !~ /\.c32$/) {
           printf "%-*s\t%s\n%*s\t%s\n", len, label[j], kernels[j], len, "", append[j]
         }
       }
@@ -175,7 +175,7 @@ parse_syslinux_config "$label"
 [[ -z $kernel || -z $append ]] && die "failed to find label \`%s'" "$label"
 
 rootopts=$(parse_cmdline "$append")
-kexec_cmd=(kexec -l "/boot/${kernel##*/}" --append="${*:-rootopts}")
+kexec_cmd=(kexec -l "/boot/${kernel##*/}" --append="${*:-$rootopts}")
 
 [[ $initrd ]] && kexec_cmd+=(--initrd="/boot/${initrd##*/}")
 
