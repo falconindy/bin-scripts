@@ -129,11 +129,11 @@ show_labels() {
 
     END {
       len = longest(label, i)
-      printf "%-*s\t%s <%s>\n", len, "label", "kernel image", "options"
+      printf "%-*s\t%s\n", len, "label", "kernel image/options"
       print "-------------------------------------------------------------"
       for (j = 1; j <= i; j++) {
         if (kernels[j] !~ /\.c32$/) {
-          printf "%-*s\t%s <%s>\n", len, label[j], kernels[j], append[j]
+          printf "%-*s\t%s\n%*s\t%s\n", len, label[j], kernels[j], len, "", append[j]
         }
       }
     }
