@@ -59,10 +59,11 @@ parse_syslinux_config() {
 
 show_labels() {
   awk '
-    function longest(list, listlen,      i, len, maxlen) {
+    function longest(list,       listlen,i, len, maxlen) {
       maxlen = 0
-      for(i = 1; i <= listlen; i++) {
-        len = length(list[i])
+      listlen = length(list)
+      for(i in list) {
+        len = length(i)
         if (len > maxlen) {
           maxlen = len
         }
@@ -70,28 +71,57 @@ show_labels() {
       return maxlen
     }
 
-    BEGIN { i = 0 }
+    function add_label(config, label, kernel, append, initrd) {
+      if (label && kernel && append) {
+        config[label] = kernel SUBSEP append SUBSEP initrd
+      }
+    }
 
-    $1 ~ /^LABEL/ {
-      i++
-      label[i] = $2
+    $1 == "LABEL" {
+      label = $2
+      kernel = ""; append = ""; initrd = ""
     }
-    $1 ~ /(LINUX|KERNEL)/ {
-      sub(/^[[:blank:]]*[^[:blank:]]+ /, "")
-      kernels[i] = $0
+
+    $1 ~ /^(LINUX|KERNEL)$/ {
+      sub(/^[[:blank:]]*(LINUX|KERNEL) /, "")
+      kernel = $0
     }
-    $1 ~ /APPEND/ {
+
+    $1 == "APPEND" {
+      sub(/^[[:blank:]]*APPEND /, "")
+      gsub(/\t/, " ")
+
+      if (append) {
+        append = append " " $0
+      } else {
+        append = $0
+      }
+    }
+
+    $1 == "INITRD" {
       sub(/^[[:blank:]]*[^[:blank:]]+ /, "")
-      append[i] = append[i] $0
+      initrd = $0
+    }
+
+    /^[[:blank:]]*$/ {
+      add_label(config, label, kernel, append, initrd)
     }
 
     END {
-      len = longest(label, i)
-      printf "%-*s\t%s\n", len, "label", "kernel image/options"
+      len = longest(config)
+
+      printf "%-*s\t%s\n", len, "label", "kernel image [initrd]"
+      printf "%*-s\t%s\n", len, "", "options"
       print "-------------------------------------------------------------"
-      for (j = 1; j <= i; j++) {
-        if (kernels[j] && kernels[j] !~ /\.c32$/) {
-          printf "%-*s\t%s\n%*s\t%s\n", len, label[j], kernels[j], len, "", append[j]
+      for (label in config) {
+        if (config[label]) {
+          # opts[label] = <kernel> <append> [initrd]
+          split(config[label], opts, SUBSEP)
+          printf "%-*s\t%s", len, label, opts[1]
+          if(opts[3]) {
+            printf " [%s]", opts[3]
+          }
+          printf "\n%*s\t%s\n", len, "", opts[2]
         }
       }
     }
