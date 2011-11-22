@@ -1,39 +1,37 @@
-#!/usr/bin/env perl
+#!/bin/bash
 
-sub get_stats {
-  my $dev = shift;
-  my @stats;
+exec gawk '
+function humanize_size(size,     count, sizestr) {
+  count = 1
 
-  open(my $fh, '<', "/sys/class/net/$dev/statistics/tx_bytes")
-    or die("Failed to open file: $!");
+  while (size > 1024) {
+    size /= 1024
+    count++
+  }
 
-  chomp($stats[0] = <$fh>);
-  $stats[0] /= 1024 * 1024;
-  close $fh;
-
-
-  open(my $fh, '<', "/sys/class/net/$dev/statistics/rx_bytes")
-    or die("Failed to open file: $!");
-
-  chomp($stats[1] = <$fh>);
-  $stats[1] /= 1024 * 1024;
-  close $fh;
-
-
-  $stats[2] = $stats[0] / $stats[1];
-
-  return @stats;
+  sizestr = sprintf("%.2f", size)
+  sub(/\.?0+$/, "", sizestr)
+  return sprintf("%s %s", sizestr, suffix[count])
 }
 
-opendir(my $dh, "/sys/class/net") or die("Failed to open dir: $!");
+BEGIN {
+  # preload array for humanize_size
+  split("KiB MiB GiB TiB PiB EiB ZiB YiB", suffix)
 
-print "Network Device Statistics (in mb)\n";
-printf "\n%8s%10s%10s%8s\n", 'Device', 'Sent', 'Received', 'Ratio';
+  # build array of devices and stats
+  for(i = 1; i < ARGC; i++) {
+    rc = split(ARGV[i], fn, /\//)
+    getline devices[fn[5]][fn[7]] < ARGV[i]
+  }
 
-while (readdir($dh)) {
-  next if /\.\.?/;
-  printf("%8s%10.2f%10.2f%8.2f\n", $_, get_stats($_));
+  # dump
+  printf "%8s%12s%12s%8s\n", "Device", "Sent", "Received", "Ratio"
+  for (dev in devices) {
+    tx_human = humanize_size(devices[dev]["tx_bytes"])
+    rx_human = humanize_size(devices[dev]["rx_bytes"])
+    ratio = devices[dev]["tx_bytes"] / devices[dev]["rx_bytes"]
+
+    printf "%8s%12s%12s%8.2f\n", dev, tx_human, rx_human, ratio
+  }
 }
-
-closedir($dh);
-
+' /sys/class/net/*/statistics/[tr]x_bytes
