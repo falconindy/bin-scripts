@@ -79,7 +79,7 @@ parse_config() {
 
     $1 == "LABEL" {
       label = $2
-      kernel = ""; append = ""; initrd = ""
+      kernel = append = initrd = ""
     }
 
     $1 ~ /^(LINUX|KERNEL)$/ {
@@ -89,13 +89,8 @@ parse_config() {
 
     $1 == "APPEND" {
       sub(/^[[:blank:]]*APPEND /, "")
-      gsub(/\t/, " ")
-
-      if (append) {
-        append = append " " $0
-      } else {
-        append = $0
-      }
+      gsub(/[[:blank:]]+/, " ")
+      append = append ? append " " $0 : $0
     }
 
     $1 == "INITRD" {
