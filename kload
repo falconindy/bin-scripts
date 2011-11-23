@@ -77,6 +77,25 @@ show_labels() {
       }
     }
 
+    function print_human(config) {
+      len = longest(config)
+
+      printf "%-*s\t%s\n", len, "label", "kernel image [initrd]"
+      printf "%*-s\t%s\n", len, "", "options"
+      print "-------------------------------------------------------------"
+      for (label in config) {
+        if (config[label]) {
+          # opts[label] = <kernel> <append> [initrd]
+          split(config[label], opts, SUBSEP)
+          printf "%-*s\t%s", len, label, opts[1]
+          if(opts[3]) {
+            printf " [%s]", opts[3]
+          }
+          printf "\n%*s\t%s\n", len, "", opts[2]
+        }
+      }
+    }
+
     $1 == "LABEL" {
       label = $2
       kernel = ""; append = ""; initrd = ""
@@ -108,22 +127,7 @@ show_labels() {
     }
 
     END {
-      len = longest(config)
-
-      printf "%-*s\t%s\n", len, "label", "kernel image [initrd]"
-      printf "%*-s\t%s\n", len, "", "options"
-      print "-------------------------------------------------------------"
-      for (label in config) {
-        if (config[label]) {
-          # opts[label] = <kernel> <append> [initrd]
-          split(config[label], opts, SUBSEP)
-          printf "%-*s\t%s", len, label, opts[1]
-          if(opts[3]) {
-            printf " [%s]", opts[3]
-          }
-          printf "\n%*s\t%s\n", len, "", opts[2]
-        }
-      }
+      print_human(config)
     }
   ' "$bootloadercfg"
   exit 0
