@@ -55,7 +55,7 @@ parse_config() {
       len = longest(config)
 
       printf "%-*s\t%s\n", len, "label", "kernel image [initrd]"
-      printf "%*-s\t%s\n", len, "", "options"
+      printf "%-*s\t%s\n", len, "", "options"
       print "-------------------------------------------------------------"
       for (label in config) {
         if (config[label]) {
