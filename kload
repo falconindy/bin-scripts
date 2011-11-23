@@ -126,6 +126,8 @@ runcmd() {
       printf '%s ' 'root'
       su -c "$(printf '%q ' "$@")"
     fi
+  else
+    "$@"
   fi
 }
 
