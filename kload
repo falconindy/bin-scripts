@@ -52,6 +52,11 @@ parse_config() {
     }
 
     function print_human(config,     opts, len, label) {
+      if (length(config) == 0) {
+        print "==> ERROR: No kernel entries found in", FILENAME  > "/dev/stderr"
+        return
+      }
+
       len = longest(config)
 
       printf "%-*s\t%s\n", len, "label", "kernel image [initrd]"
@@ -131,7 +136,7 @@ while getopts ":f:hl" flag; do
   case $flag in
     f) bootloadercfg=$OPTARG ;;
     h) usage ;;
-    l) parse_config 'list' ;;
+    l) list=1 ;;
     :) die "option '--%s' requires an argument" "$OPTARG" ;;
     ?) die "invalid option -- '%s'" "$OPTARG" ;;
   esac
@@ -139,6 +144,8 @@ done
 shift $(( OPTIND - 1 ))
 
 [[ -f $bootloadercfg ]] || die "unable to find bootloader config: %s" "$bootloadercfg"
+
+(( list )) && { parse_config 'list'; exit 0; }
 
 label=$1; shift
 [[ $label ]] || die "no label specified (use -h for help)"
