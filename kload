@@ -83,31 +83,31 @@ parse_config() {
     }
 
     $1 == "LABEL" {
+      add_label(config, label, kernel, append, initrd)
       label = $2
       kernel = append = initrd = ""
     }
 
-    $1 ~ /^(LINUX|KERNEL)$/ {
+    label && $1 ~ /^(LINUX|KERNEL)$/ {
       sub(/^[[:blank:]]*(LINUX|KERNEL) /, "")
       kernel = $0
     }
 
-    $1 == "APPEND" {
+    label && $1 == "APPEND" {
       sub(/^[[:blank:]]*APPEND /, "")
       gsub(/[[:blank:]]+/, " ")
       append = append ? append " " $0 : $0
     }
 
-    $1 == "INITRD" {
+    label && $1 == "INITRD" {
       sub(/^[[:blank:]]*[^[:blank:]]+ /, "")
       initrd = $0
     }
 
-    /^[[:blank:]]*$/ {
-      add_label(config, label, kernel, append, initrd)
-    }
-
     END {
+      # if theres no line after the last section, we wont add the label
+      add_label(config, label, kernel, append, initrd)
+
       if (action == "list") {
         print_human(config)
       } else if (action == "parse_one") {
