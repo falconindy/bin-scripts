@@ -20,7 +20,8 @@ usage() {
 usage: ${0##*/} <label> [rootoptions]
 
 ${0##*/} parses syslinux's bootloader configuration and automates the process
-of loading a new kernel for kexec.
+of loading a new kernel for kexec. If specified, any root options will override
+the APPEND line of the config for a given kernel.
 
   Options:
     -f <file>   use another config file (default: /boot/syslinux/syslinux.cfg)
