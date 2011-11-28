@@ -64,7 +64,7 @@ urlencode() {
 
   for (( i = 0; i < len; i++ )); do
     char=${url:i:1}
-    case "$char" in
+    case $char in
       [a-zA-Z0-9.~_-]) printf "$char" ;;
       ' ') printf + ;;
       *) printf '%%%X' "'$char" ;;
@@ -168,7 +168,8 @@ read_response_headers() {
 
     (( verbose )) && printf '%s: %s\n' "$header" "$value"
 
-    header=$(tr '[:upper:]' '[:lower:]' <<< ${header//-/_})
+    header=${header,,}
+    header=${header//-/_}
     read -r -d $'\r' "$header" <<< "$value"
 
     respheaders+=("$header")
