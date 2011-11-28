@@ -1,0 +1,37 @@
+#!/bin/gawk -f
+
+function getcoord(string,   a) {
+  split(string, a, ":")
+  gsub(/\"/, "", a[2])
+  return a[2]
+}
+
+function httpget() {
+  host = "geoiplookup.wikimedia.org"
+  socket = "/inet/tcp/0/" host "/80"
+
+  printf "GET / HTTP/1.1\r\nHost: %s\n\n", host |& socket
+  for (header in headers) {
+    printf "%s\r\n", headers[header] |& socket
+  }
+  printf "\r\n" |& socket
+
+  NR = 0
+  in_body = 0
+  while (socket |& getline) {
+    if (/^\r$/) {
+      socket |& getline
+      return $0
+    }
+  }
+}
+
+BEGIN {
+  data = httpget()
+
+  split(data, coords, /,/)
+  lat = getcoord(coords[3])
+  lon = getcoord(coords[4])
+
+  printf "http://maps.google.com/maps?q=%s,%s\n", lat, lon
+}
