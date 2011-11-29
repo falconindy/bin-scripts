@@ -44,6 +44,11 @@ if [[ $1 = -@(r|-rebuild) ]]; then
   exit 0
 fi
 
+if ! type -p svn >/dev/null; then
+  printf '==> ERROR: subversion does not appear to be installed\n' >&2
+  exit 1
+fi
+
 [[ -z $1 ]] && { printf "Usage: %s targets...\n" "${0##*/}"; exit 1; }
 [[ ! -f $splitpkgcache && -d $absroot ]] && build_splitpkg_cache
 [[ -s $splitpkgcache ]] && . "$splitpkgcache"
