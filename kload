@@ -120,6 +120,7 @@ parse_config() {
 }
 
 runcmd() {
+  printf 'executing: %s\n' "$*"
   if (( needsroot )); then
     if sudo -v &>/dev/null && sudo -l &>/dev/null; then
       sudo "$@"
@@ -163,6 +164,5 @@ label=$1; shift
 kexec_cmd=(kexec -l "/boot/${kernel##*/}" --append="${*:-$append}")
 [[ $initrd ]] && kexec_cmd+=(--initrd="/boot/${initrd##*/}")
 
-printf 'executing: %s\n' "${kexec_cmd[*]}"
 runcmd "${kexec_cmd[@]}"
 
