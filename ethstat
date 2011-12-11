@@ -29,7 +29,7 @@ BEGIN {
   for (dev in devices) {
     tx_human = humanize_size(devices[dev]["tx_bytes"])
     rx_human = humanize_size(devices[dev]["rx_bytes"])
-    ratio = devices[dev]["tx_bytes"] / devices[dev]["rx_bytes"]
+    ratio = devices[dev]["rx_bytes"] ? devices[dev]["tx_bytes"] / devices[dev]["rx_bytes"] : 0
 
     printf "%8s%12s%12s%8.2f\n", dev, tx_human, rx_human, ratio
   }
