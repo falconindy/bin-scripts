@@ -1,5 +1,5 @@
 #!/bin/sh
 
-pgrep offlineimap >/dev/null || offlineimap -o -u quiet &
+pgrep offlineimap >/dev/null || offlineimap -o -u quiet >/dev/null &
 
 exit 0
