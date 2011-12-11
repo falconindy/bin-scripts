@@ -134,12 +134,13 @@ runcmd() {
 }
 
 # main()
-while getopts ":f:hl" flag; do
+while getopts ":a:f:hl" flag; do
   case $flag in
+    a) optappend=$OPTARG ;;
     f) bootloadercfg=$OPTARG ;;
     h) usage ;;
     l) list=1 ;;
-    :) die "option '--%s' requires an argument" "$OPTARG" ;;
+    :) die "option '-%s' requires an argument" "$OPTARG" ;;
     ?) die "invalid option -- '%s'" "$OPTARG" ;;
   esac
 done
@@ -155,13 +156,13 @@ label=$1; shift
 (( UID == 0 )) || needsroot=1
 
 {
-  read -rd '' kernel
-  read -rd '' append
-  read -rd '' initrd
+  IFS= read -rd '' kernel
+  IFS= read -rd '' append
+  IFS= read -rd '' initrd
 } < <(parse_config 'parse_one' "$label")
 [[ -z $kernel || -z $append ]] && die "failed to find label \`%s'" "$label"
 
-kexec_cmd=(kexec -l "/boot/${kernel##*/}" --append="${*:-$append}")
+kexec_cmd=(kexec -l "/boot/${kernel##*/}" --append="${*:-$append} $optappend")
 [[ $initrd ]] && kexec_cmd+=(--initrd="/boot/${initrd##*/}")
 
 runcmd "${kexec_cmd[@]}"
