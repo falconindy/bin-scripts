@@ -11,7 +11,7 @@ splitpkgcache=$HOME/.cache/splitpkg.cache
 
 build_splitpkg_cache() {
   printf '==> building split package cache...\n' >&2
-  [[ -d $HOME/.cache/ ]] || mkdir -p $HOME/.cache
+  [[ -d $HOME/.cache ]] || mkdir -p "$HOME/.cache"
 
   . /etc/makepkg.conf
   {
@@ -39,18 +39,20 @@ getrepo() {
   return 1
 }
 
-if [[ $1 = -@(r|-rebuild) ]]; then
-  build_splitpkg_cache
-  exit 0
-fi
-
 if ! type -p svn >/dev/null; then
   printf '==> ERROR: subversion does not appear to be installed\n' >&2
   exit 1
 fi
 
-[[ -z $1 ]] && { printf "Usage: %s targets...\n" "${0##*/}"; exit 1; }
-[[ ! -f $splitpkgcache && -d $absroot ]] && build_splitpkg_cache
+if [[ -z $1 ]]; then
+  printf "Usage: %s [-r|--rebuild] targets...\n" "${0##*/}"
+  exit 1
+fi
+
+if [[ $1 = -@(r|-rebuild) || ( ! -f $splitpkgcache && -d $absroot ) ]]; then
+  build_splitpkg_cache
+fi
+
 [[ -s $splitpkgcache ]] && . "$splitpkgcache"
 
 for pkg; do
