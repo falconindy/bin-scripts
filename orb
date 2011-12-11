@@ -227,7 +227,7 @@ read_response_body() {
 }
 
 # shutdown socket on exit
-trap 'exec 4<&-' 0 QUIT
+trap '[[ $SOCK && -e /dev/fd/$SOCK ]] && exec {SOCK}<&-' EXIT
 
 # main()
 while getopts ':dghIimrsv' opt; do
