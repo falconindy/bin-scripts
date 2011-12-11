@@ -12,7 +12,7 @@ declare -i actrpc=0 actpb=0 acttb=0
 
 declare content_encoding=cat          # NOOP decompressor
 
-declare -r uastring="bashium 0.2 (bash ${BASH_VERSINFO[0]}-${BASH_VERSINFO[1]})"
+declare -r uastring="bashium 0.2 (bash ${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]})"
 declare -r hostname='aur.archlinux.org'
 declare -r port='80' bufsiz=4096
 declare -r fmt_pkgpath='/packages/%s/%s/%s.tar.gz'
@@ -132,22 +132,25 @@ connect() {
 
 # request handler
 send_http_request() {
-  (( verbose )) && printf '%s' '> ' "http://" "$hostname" "$1" $'\n'
-   printf '%s\r\n' \
-      "GET $1 HTTP/1.1" \
-      "User-Agent: $uastring" \
-      "Host: $hostname" \
-      "Accept-Encoding: gzip" \
-      "Accept: */*" \
-      "Connection: Keep-Alive" \
-      "" >&$SOCK
+  local -a headers=(
+    "GET $1 HTTP/1.1"
+    "User-Agent: $uastring"
+    "Host: $hostname"
+    "Accept-Encoding: gzip"
+    "Accept: */*"
+    "Connection: Keep-Alive"
+    ""
+  )
+
+  (( verbose )) && printf '> %s\n' "http://$hostname$1" "${headers[@]}"
+  printf '%s\r\n' "${headers[@]}" >&$SOCK
 }
 
 
 # response handlers
 read_response_code() {
   read -r -u $SOCK header resp status
-  (( verbose )) && printf '%s: %s %s\n' "$header" "$resp" "$status"
+  (( verbose )) && printf '< %s: %s %s\n' "$header" "$resp" "$status"
 
   if [[ $resp ]]; then
     if (( resp == 404 )); then
@@ -167,7 +170,7 @@ read_response_headers() {
     # end of headers
     [[ $header = $'\r' ]] && break
 
-    (( verbose )) && printf '%s: %s\n' "$header" "$value"
+    (( verbose )) && printf '< %s: %s\n' "$header" "$value"
 
     header=${header,,}
     header=${header//-/_}
