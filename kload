@@ -24,6 +24,7 @@ of loading a new kernel for kexec. If specified, any root options will override
 the APPEND line of the config for a given kernel.
 
   Options:
+    -a <append> add additional parameters to new kernel's cmdline
     -f <file>   use another config file (default: /boot/syslinux/syslinux.cfg)
     -h          display this help message.
     -l          display available kernels by label
