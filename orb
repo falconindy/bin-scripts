@@ -125,7 +125,7 @@ gzip() {
 
 # connect handler
 connect() {
-  { exec {SOCK}<>/dev/tcp/$hostname/$port; } 2>/dev/null ||
+  { exec {sock}<>/dev/tcp/$hostname/$port; } 2>/dev/null ||
     die 'error: failed to connect to %s:%s\n' "$hostname" "$port"
 }
 
@@ -143,13 +143,13 @@ send_http_request() {
   )
 
   (( verbose )) && printf '> %s\n' "http://$hostname$1" "${headers[@]}"
-  printf '%s\r\n' "${headers[@]}" >&$SOCK
+  printf '%s\r\n' "${headers[@]}" >&$sock
 }
 
 
 # response handlers
 read_response_code() {
-  read -r -u $SOCK header resp status
+  read -r -u $sock header resp status
   (( verbose )) && printf '< %s: %s %s\n' "$header" "$resp" "$status"
 
   if [[ $resp ]]; then
@@ -166,7 +166,7 @@ read_response_headers() {
   local header= value=
 
   # read response until the end of the headers
-  while IFS=': ' read -r -u $SOCK header value; do
+  while IFS=': ' read -r -u $sock header value; do
     # end of headers
     [[ $header = $'\r' ]] && break
 
@@ -209,29 +209,29 @@ read_response_body() {
   local len=
 
   if (( content_length )); then
-    read_buffered $SOCK $content_length | $content_encoding | ${raw:-$content_type}
+    read_buffered $sock $content_length | $content_encoding | ${raw:-$content_type}
   elif [[ "$transfer_encoding" = chunked ]]; then
     while true; do
-      read -r -d $'\r\n' -u $SOCK len       # read length, consume \r
-      read -r -n 1 -u $SOCK _               # consume \n
+      read -r -d $'\r\n' -u $sock len       # read length, consume \r
+      read -r -n 1 -u $sock _               # consume \n
 
       len=$(( 0x$len ))                     # convert hex2dec
       if (( len == 0 )); then               # exit condition
-        read -r -n 4 -u $SOCK _             # consume final \r\n\r\n
+        read -r -n 4 -u $sock _             # consume final \r\n\r\n
         break
       fi
 
-      read_buffered $SOCK $len              # read chunk
+      read_buffered $sock $len              # read chunk
 
-      read -r -n 2 -u $SOCK _               # consume \r\n
+      read -r -n 2 -u $sock _               # consume \r\n
     done | $content_encoding | ${raw:-$content_type}
   else
-    $content_encoding <&$SOCK | ${raw:-$content_type}
+    $content_encoding <&$sock | ${raw:-$content_type}
   fi
 }
 
 # shutdown socket on exit
-trap '[[ $SOCK && -e /dev/fd/$SOCK ]] && exec {SOCK}<&-' EXIT
+trap '[[ $sock && -e /dev/fd/$sock ]] && exec {sock}<&-' EXIT
 
 # main()
 while getopts ':dghIimrsv' opt; do
