@@ -16,7 +16,7 @@ function humanize_size(size,     count, sizestr) {
 
 BEGIN {
   # preload array for humanize_size
-  split("KiB MiB GiB TiB PiB EiB ZiB YiB", suffix)
+  split("B KiB MiB GiB TiB PiB EiB ZiB YiB", suffix)
 
   # build array of devices and stats
   for(i = 1; i < ARGC; i++) {
