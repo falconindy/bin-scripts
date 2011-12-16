@@ -13,11 +13,17 @@ if [[ -z $curbranch ]]; then
   exit 1
 fi
 
-remote=$(git config "branch.$curbranch.remote" 2>/dev/null || echo "origin")
-remote=${remote##*/}
+[[ $1 ]] && IFS='/' read -r remote merge <<< "$1"
 
-merge=$(git config "branch.$curbranch.merge" 2>/dev/null || echo "$curbranch")
-merge=${merge##*/?(+)}
+if [[ -z $remote ]]; then
+  remote=$(git config "branch.$curbranch.remote" 2>/dev/null || echo "origin")
+  remote=${remote##*/}
+fi
+
+if [[ -z $merge ]]; then
+  merge=$(git config "branch.$curbranch.merge" 2>/dev/null || echo "$curbranch")
+  merge=${merge##*/?(+)}
+fi
 
 printf 'Comparing with %s/%s\n' "${remote:-origin}" "${merge:-master}"
 git cherry -v ${remote:-origin}/${merge:-master}
