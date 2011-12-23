@@ -6,7 +6,7 @@
 
 shopt -s nullglob
 
-# indent size
+indent=0
 ind_sz=3
 dirs_first=0
 
@@ -48,11 +48,7 @@ while getopts "ad" opt; do
 done
 shift $(( OPTIND - 1 ))
 
-indent=0
-(( $# == 0 )) && DIRS=(.) || DIRS=($@)
-
-for basedir in "${DIRS[@]}"; do
-  cd "$basedir" 2>/dev/null || { printf "Directory not found: '%s'\n" "$basedir" >&2; continue; }
+for basedir in "${@:-.}"; do
   walk "$basedir"
 done
 
