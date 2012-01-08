@@ -11,11 +11,17 @@ upper=/usr/include/asm-generic/errno.h
 exec 0< <(cat "$base" "$upper")
 
 numeric_to_symbol() {
-  awk '/^#define/ && $3 == '"$1"' { printf "%s = '$1'\n",$2; exit 1; }'
+  awk -v "num=$1" '/^#define/ && $3 == num {
+    printf "%s = '$1'\n", $2
+    exit 1
+  }'
 }
 
 symbol_to_numeric() {
-  awk '/^#define/ && $2 == "'"$1"'" { printf "'$1' = %s\n",$3; exit 1; }'
+  awk -v "sym=$1" '/^#define/ && $2 == sym {
+    printf "'$1' = %s\n", $3
+    exit 1
+  }'
 }
 
 perror() {
