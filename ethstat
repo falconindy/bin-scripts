@@ -4,7 +4,7 @@ exec gawk '
 function humanize_size(size,     count, sizestr) {
   count = 1
 
-  while (size > 1024) {
+  while (size + 0 > 1024) {
     size /= 1024
     count++
   }
