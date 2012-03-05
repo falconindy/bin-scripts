@@ -17,10 +17,9 @@ resolve_bin() {
     depmap["${BASH_REMATCH[1]}"]=${BASH_REMATCH[2]}
   done <<< "$lddout"
 
-  pacman -Ql | grep -Ff \
-    <(objdump -p "$1" | while read section soname; do
-        [[ $section == NEEDED && ${depmap[$soname]} ]] && printf '%s\n' "${depmap[$soname]}"
-      done) | cut '-d ' -f1 | sort -u
+  objdump -p "$1" 2>/dev/null | while read section soname; do
+    [[ $section == NEEDED && ${depmap[$soname]} ]] && printf '%s\n' "${depmap[$soname]}"
+  done | pacman -Qqo - 2>/dev/null
 }
 
 for bin; do
