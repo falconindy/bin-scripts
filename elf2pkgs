@@ -3,20 +3,21 @@
 # resolve ELF library deps to pacman packages
 #
 
-declare -r lddregex=$'(.+) => (.+) \(0x[a-fA-F0-9]+\)'
+declare -r lddregex=$'(.+) => (.+) \(0x[a-fA-F0-9]+\)$'
 
 resolve_bin() {
   declare -A depmap
   declare -a linkage
 
+  # leverage the linker to do lib => path resolution
   local lddout=$(ldd "$1" 2>/dev/null) || return
 
-  # leverage the linker to do lib resolution
   while read -r line; do
     [[ $line =~ $lddregex ]] || continue
     depmap["${BASH_REMATCH[1]}"]=${BASH_REMATCH[2]}
   done <<< "$lddout"
 
+  # dump directly linked deps, printing paths from our ldd "map"
   objdump -p "$1" 2>/dev/null | while read section soname; do
     [[ $section == NEEDED && ${depmap[$soname]} ]] && printf '%s\n' "${depmap[$soname]}"
   done | pacman -Qqo - 2>/dev/null
