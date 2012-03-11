@@ -51,6 +51,7 @@ fi
 
 if [[ $1 = -@(r|-rebuild) || ( ! -f $splitpkgcache && -d $absroot ) ]]; then
   build_splitpkg_cache
+  exit
 fi
 
 [[ -s $splitpkgcache ]] && . "$splitpkgcache"
