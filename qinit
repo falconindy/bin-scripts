@@ -15,6 +15,9 @@
 #   )
 # }
 #
+# If unspecified:
+#   ${drives[@]}: will match all of "$imgroot/$vm".*.qcow2
+#
 
 ### Paths ################################
 declare -r machines=$XDG_CONFIG_HOME/qemu/machines
@@ -23,9 +26,9 @@ declare imgroot=/mnt/Haven/qemu-img
 
 ### Defaults #############################
 declare mem="-m 1024"
-declare cpus="-smp 4"
+declare cpus="-cpu Nehalem -smp 4"
 declare net="-net vde -net nic,model=virtio"
-
+declare cdrom="-cdrom $isoroot/archlinux-2012.03.28_14-30-01-netinstall-x86_64.iso -boot d"
 ### Launcher #############################
 
 . "$machines"
@@ -43,12 +46,20 @@ if [[ -z $1 ]]; then
   exit 0
 fi
 
-if ! type -t vm_$1 >/dev/null; then
-  printf 'unknown VM: %s\n' "$1"
+vm=$1; shift
+if ! type -t vm_$vm >/dev/null; then
+  printf 'unknown VM: %s\n' "$vm"
   exit 1
 fi
 
-vm_$1; shift
+vm_$vm
 
-exec qemu-kvm "${opts[@]}" $cpus $mem ${drives[@]} $net ${usecdrom:+$cdrom} "$@"
+# default drives
+if (( ${#drives[*]} == 0 )); then
+  for drive in "$imgroot/$vm".*.qcow2; do
+    drives+=("-drive" "file=$drive,if=virtio")
+  done
+fi
+
+exec qemu-kvm "${opts[@]}" $cpus $mem "${drives[@]}" $net ${usecdrom:+$cdrom} "$@"
 
