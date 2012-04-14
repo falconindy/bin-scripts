@@ -7,23 +7,23 @@ fi
 
 wallpaper_root="$HOME/pic/wallpaper"
 
-while read pic; do
-  IFS=$'\t' read -r -a dim < <(identify $pic | sed -n 's/.* \([0-9]\{3,4\}\)x\([0-9]\{3,4\}\) .*/\1\t\2/p')
+while read -r -d '' pic; do
+  read -r width height < <(identify '%w %h' "$pic")
 
-  case "$(echo "scale=3;${dim[0]} / ${dim[1]}" | bc)" in
-    "1.777") ratio="16:9" ;;
-    "1.600") ratio="16:10" ;;
-    "1.333") ratio="4:3" ;;
-    "1.250") ratio="5:4" ;;
-    *) ratio="other"
-       prefix="${dim[0]}x${dim[1]}_" ;;
+  case $(echo "scale=3;$width / $height" | bc) in
+    1.777) ratio='16:9' ;;
+    1.600) ratio='16:10' ;;
+    1.333) ratio='4:3' ;;
+    1.250) ratio='5:4' ;;
+    *) ratio='other'
+       printf -v prefix '%sx%x_' "$width" "$height" ;;
   esac
 
-  if [[ $ratio && ! -d "$wallpaper_root/$ratio/${dim[0]}x${dim[1]}" ]]; then
-    mkdir -vp "$wallpaper_root/$ratio/${dim[0]}x${dim[1]}"
+  if [[ $ratio && ! -d $wallpaper_root/$ratio/$widthx$height ]]; then
+    mkdir -vp "$wallpaper_root/$ratio/${width}x$height"
   fi
 
-  mv -v "$pic" "$wallpaper_root/$ratio/$prefix$(basename $pic)"
+  mv -v "$pic" "$wallpaper_root/$ratio/$prefix${pic##*/}"
   unset prefix
-done < <(find . -maxdepth 1 -type f)
+done < <(find "${1:-.}" -maxdepth 1 -type f -print0)
 

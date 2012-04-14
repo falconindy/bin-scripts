@@ -1,7 +1,5 @@
 #!/bin/bash
 
-WP_ROOT=$HOME/var/pic/wallpaper/16:10
-
-find "$WP_ROOT" -type f -print0 | shuf -z -n1
+find "$HOME/var/pic/wallpaper/16:10" -type f -print0 | shuf -z -n1
 [[ -t 1 ]] && echo
 
