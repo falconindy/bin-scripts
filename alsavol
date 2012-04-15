@@ -17,7 +17,7 @@ setvol() {
   local channel=$1 level=$2
 
   (( $# == 2 )) || return 1
-  amixer -q set "$channel" "$level"
+  amixer -q set "$channel" "$level%"
 }
 
 is_muted() {
@@ -83,7 +83,7 @@ increase() {
   newvol=$(( curvol + increment ))
   (( newvol > 100 )) && newvol=100
 
-  setvol "$channel" "$(( curvol + increment ))"
+  setvol "$channel" "$(( newvol ))"
   echo "$newvol"
 }
 
