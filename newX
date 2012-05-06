@@ -1,7 +1,0 @@
-#!/bin/bash
-
-[[ -z "$1" ]] && echo "Error: Please provide a program" && exit 1
-
-/usr/bin/X -nolisten tcp -ac -terminate :1  &
-sleep 2
-DISPLAY=:1 "$@"
