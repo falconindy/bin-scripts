@@ -9,6 +9,7 @@ shopt -s nullglob
 indent=0
 ind_sz=3
 dirs_first=0
+files_only=0
 
 printentry() {
   printf "%*s%s\n" "$indent" "" "$1"
@@ -26,24 +27,32 @@ get_pwd_contents() {
 
 walk() {
   local dir_contents
-  printentry "$(printf "\e[0;34m%s\e[0m" "$1")"
 
-  (( indent += ind_sz ))
+  if (( !files_only )); then
+    printentry "$(printf "\e[0;34m%s\e[0m" "$1")"
+    (( indent += ind_sz ))
+  fi
+
   pushd "$1" &>/dev/null
 
   (( dirs_first )) && get_pwd_contents || dir_contents=(*)
   for entry in "${dir_contents[@]}"; do
-    [[ -d $entry && ! -L $entry ]] && walk "$entry" || printentry "$entry"
+    if [[ -d $entry && ! -L $entry ]]; then
+      walk "$entry"
+    else
+      printentry "$entry"
+    fi
   done
 
-  (( indent -= ind_sz ))
+  (( !files_only )) && (( indent -= ind_sz ))
   popd &>/dev/null
 }
 
-while getopts "ad" opt; do
+while getopts "afFd" opt; do
   case $opt in
     a) shopt -s dotglob ;;
     d) dirs_first=1 ;;
+    f) files_only=1 ;;
   esac
 done
 shift $(( OPTIND - 1 ))
