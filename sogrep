@@ -3,7 +3,7 @@
 import os, sys, argparse
 from subprocess import PIPE, Popen
 
-CACHEFILE = os.path.join(os.getenv('XDG_CACHE_HOME'), 'solinks')
+CACHEFILE = os.path.join(os.getenv('HOME'), '.cache/solinks')
 
 SEARCHPATHS = [
     '/lib/',
@@ -48,8 +48,8 @@ def write_solinks(cachefile, pkg, files):
     for link in sorted(set(links)):
         print("{}\t{}".format(pkg, link), file=cachefile)
 
-def sogrep(cachefile, search):
-    with open(cachefile) as solinks:
+def sogrep(search):
+    with open(CACHEFILE) as solinks:
         for line in solinks:
             pkgname, soname = line.rstrip().split('\t')
             if soname.startswith(search):
@@ -91,7 +91,7 @@ def main():
         if not opts.soname:
             print("error: no soname specified", file=sys.stderr)
             sys.exit(1)
-        sogrep(CACHEFILE, opts.soname)
+        sogrep(opts.soname)
 
 if __name__ == '__main__':
     main()
