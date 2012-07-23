@@ -197,7 +197,7 @@ read_response_headers() {
 }
 
 read_buffered() {
-  local actual= fd=$1 len=$2
+  local readlen= actual= bs= fd=$1 len=$2
 
   while (( len > 0 )); do
     (( len > bufsiz )) && readlen=$bufsiz || readlen=$len
@@ -211,7 +211,7 @@ read_response_body() {
 
   if (( content_length )); then
     read_buffered $sock $content_length | $content_encoding | ${raw:-$content_type}
-  elif [[ "$transfer_encoding" = chunked ]]; then
+  elif [[ $transfer_encoding = chunked ]]; then
     while true; do
       read -r -d $'\r\n' -u $sock len       # read length, consume \r
       read -r -n 1 -u $sock _               # consume \n
