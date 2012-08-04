@@ -26,9 +26,9 @@ declare imgroot=/mnt/Haven/qemu-img
 
 ### Defaults #############################
 declare mem="-m 1024"
-declare cpus="-cpu Nehalem -smp 4"
+declare cpus="-cpu Nehalem"
 declare net="-net vde -net nic,model=virtio"
-declare cdrom="-cdrom $isoroot/archlinux-2012.03.28_14-30-01-netinstall-x86_64.iso -boot d"
+declare cdrom="-cdrom $isoroot/archlinux-2012.08.04-dual.iso -boot d"
 ### Launcher #############################
 
 . "$machines"
