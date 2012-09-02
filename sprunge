@@ -79,7 +79,6 @@ send_http_request() {
                     "User-Agent: $uastring"
                     "Host: $hostname"
                     "Accept: */*"
-                    "Expect: 100-continue"
                     "Content-Length: $content_len"
                     "Content-Type: multipart/form-data; boundary=$bstring"
                     '')
