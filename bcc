@@ -1,18 +1,13 @@
 #!/bin/sh
 
-CC="gcc -std=c99 -pipe -Wall -pedantic"
-CFLAGS="-O2"
-SRC=/tmp/tmp$$.c
-OUT=/tmp/tmp$$
+CC="gcc -std=c99"
+CFLAGS="-O2 -pipe -Wall -Wextra -pedantic"
+src=/tmp/tmp$$.c
+out=/tmp/tmp$$
 
-trap_exit() {
-  [ -f "$OUT" ] && rm -f "$OUT"
-  [ -f "$SRC" ] && rm -f "$SRC"
-}
+trap 'rm -f "$out" "$src"' EXIT
 
-trap 'trap_exit' 0 TERM HUP QUIT INT
-
-cat > "$SRC" <<HEREDOCTHEREDOCEVERYWHEREADOCDOC
+cat > "$src" <<HEREDOCTHEREDOCEVERYWHEREADOCDOC
 #define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>
@@ -20,14 +15,15 @@ cat > "$SRC" <<HEREDOCTHEREDOCEVERYWHEREADOCDOC
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-int main(int argc, char *argv[]) {
+int main(void) {
   $@
   return 0;
 }
 HEREDOCTHEREDOCEVERYWHEREADOCDOC
 
-$CC $CFLAGS $SRC -o "$OUT" && "$OUT"
+$CC $CFLAGS $src -o "$out" && "$out"
 
