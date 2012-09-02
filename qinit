@@ -6,13 +6,8 @@
 # specifying options for the particular VM, for example:
 #
 # vm_beatbox() {
-#   cdrom="-cdrom $isoroot/archlinux-2011.05.08-core-x86_64.iso -boot d"
-#
-#   opts=(-nographic)
-#   drives=(
-#     "-drive file=$imgroot/beatbox.1.qcow2,if=virtio"
-#     "-drive file=$imgroot/beatbox.2.qcow2,if=virtio"
-#   )
+#   mac="de:ad:be:ef:00:09"
+#   options=(-nographic)
 # }
 #
 # If unspecified:
@@ -20,22 +15,22 @@
 #
 
 ### Paths ################################
-declare -r machines=$XDG_CONFIG_HOME/qemu/machines
-declare isoroot=/mnt/Gluttony/iso
-declare imgroot=/mnt/Haven/qemu-img
+machines=${XDG_CONFIG_HOME:-$HOME/.config}/qemu/machines
+isoroot=/mnt/Gluttony/iso
+imgroot=/mnt/Haven/qemu-img
 
 ### Defaults #############################
-declare mem="-m 1024"
-declare cpus="-cpu Nehalem"
-declare net="-net vde -net nic,model=virtio"
-declare cdrom="-cdrom $isoroot/archlinux-2012.08.04-dual.iso -boot d"
+mem=(-m 1024)
+cpus=(-cpu Nehalem)
+iso=$isoroot/archlinux.iso
 ### Launcher #############################
 
 . "$machines"
 
-while getopts 'c' flag; do
+while getopts 'cd:' flag; do
   case $flag in
-    c) usecdrom=true ;;
+    c) usecdrom=1 ;;
+    d) iso=$OPTARG ;;
   esac
 done
 shift $(( OPTIND - 1 ))
@@ -54,12 +49,23 @@ fi
 
 vm_$vm
 
+cdrom=(-cdrom "$iso" -boot d)
+net=(-net vde -net nic,model=virtio,macaddr="$mac")
+
+opts+=("${cpus[@]}" "${mem[@]}" "${net[@]}")
+
+if (( usecdrom )); then
+  opts+=(-cdrom "$iso" -boot d)
+fi
+
 # default drives
 if (( ${#drives[*]} == 0 )); then
   for drive in "$imgroot/$vm".*.qcow2; do
-    drives+=("-drive" "file=$drive,if=virtio")
+    opts+=("-drive" "file=$drive,if=virtio")
   done
+else
+  opts+=("${drives[@]}")
 fi
 
-exec qemu-kvm "${opts[@]}" $cpus $mem "${drives[@]}" $net ${usecdrom:+$cdrom} "$@"
+exec kvm "${opts[@]}" "$@"
 
