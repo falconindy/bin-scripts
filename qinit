@@ -21,7 +21,7 @@ imgroot=/mnt/Haven/qemu-img
 
 ### Defaults #############################
 mem=(-m 1024)
-cpus=(-cpu Nehalem)
+cpus=(-cpu Nehalem -smp sockets=1,cores=2,threads=2)
 iso=$isoroot/archlinux.iso
 ### Launcher #############################
 
@@ -61,7 +61,7 @@ fi
 # default drives
 if (( ${#drives[*]} == 0 )); then
   for drive in "$imgroot/$vm".*.qcow2; do
-    opts+=("-drive" "file=$drive,if=virtio")
+    opts+=("-drive" "file=$drive,if=virtio,aio=native")
   done
 else
   opts+=("${drives[@]}")
