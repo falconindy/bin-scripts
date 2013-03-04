@@ -1,0 +1,30 @@
+#!/bin/bash
+
+ignored() {
+  local pkg=$1
+  for i in "${ignored[@]}"; do
+    [[ $pkg = $i ]] && return 0
+  done
+  return 1
+}
+
+while read -a i; do
+  ignored+=("${i[@]}")
+done < <(sed '/^[[:space:]]*IgnorePkg/!d;s|.*=[[:space:]]*||' /etc/pacman.conf)
+
+declare -A updates
+while read upd ver; do
+  if ignored "$upd"; then
+    printf ':: ignoring %s\n' "$upd"
+    continue
+  fi
+  updates["$upd"]=$ver
+done < <(pacman -Qu)
+
+(( ${#updates[*]} )) || exit 0
+
+while read pkg newver; do
+  printf '%-40.40s %12s => %s\n' "$pkg" "${updates[${pkg#*/}]}" "$newver"
+done < <(expac -1S '%r/%n %v' "${!updates[@]}") | sort
+
+exit 1
