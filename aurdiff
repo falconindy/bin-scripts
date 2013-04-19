@@ -18,4 +18,4 @@ if [[ -z $pkgname ]]; then
 fi >&2
 
 diff ${@:--u} PKGBUILD \
-    <(curl -s "http://aur.archlinux.org/packages/${pkgname:0:2}/$pkgname/PKGBUILD")
+    <(curl -s "https://aur.archlinux.org/packages/${pkgname:0:2}/$pkgname/PKGBUILD")
