@@ -23,6 +23,18 @@ resolve_bin() {
   done | pacman -Qqo - 2>/dev/null
 }
 
+resolve_dir() {
+  local bin
+
+  while read -rd '' bin; do
+    resolve_bin "$bin"
+  done < <(find "$1" -type f -executable -print0)
+}
+
 for bin; do
-  resolve_bin "$bin"
+  if [[ -f $bin ]]; then
+    resolve_bin "$bin"
+  elif [[ -d $bin ]]; then
+    resolve_dir "$bin"
+  fi
 done | sort -u
